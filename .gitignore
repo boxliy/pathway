@@ -1,5 +1,9 @@
 node_modules/
 dist/
+!ts/core/pathway-core/dist/
+!ts/core/pathway-core/dist/**
+!ts/locales/zh-cn/pathway-zh-cn/dist/
+!ts/locales/zh-cn/pathway-zh-cn/dist/**
 coverage/
 .DS_Store
 *.log
