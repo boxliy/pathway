@@ -1,0 +1,38 @@
+{
+  "name": "@pathway/zh-cn",
+  "version": "0.1.0",
+  "description": "Pathway Chinese address parser",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@pathway/core": "workspace:*",
+    "cn-division": "^2026.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "*",
+    "jest": "*",
+    "ts-jest": "*",
+    "tsup": "*",
+    "typescript": "*"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/*.test.ts"
+    ]
+  }
+}
