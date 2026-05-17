@@ -124,6 +124,31 @@ test("uses identity card address code as region evidence when text has no region
   expect(result.evidence?.some((item) => item.source === "id_card" && item.target === "370213")).toBe(true);
 });
 
+test("uses data package postal evidence by default when text has no region", () => {
+  const result = parseZhAddress("陈晏宁 青禾路澄园3号楼 15166000705 266100");
+
+  expect(result.region?.province?.name).toBe("山东省");
+  expect(result.region?.city?.name).toBe("青岛市");
+  expect(result.region?.district?.name).toBe("李沧区");
+  expect(result.evidence?.some((item) => item.source === "postal_code" && item.target === "370213")).toBe(true);
+});
+
+test("allows caller postal code regions to override default postal evidence", () => {
+  const parser = createZhAddressParser({
+    postalCodeRegions: {
+      "100020": "310115",
+    },
+  });
+
+  const result = parser.parse("陈晏宁 世纪大道88号 15166000705 100020");
+
+  expect(result.region?.province?.name).toBe("上海市");
+  expect(result.region?.city?.name).toBe("上海市");
+  expect(result.region?.district?.name).toBe("浦东新区");
+  expect(result.evidence?.some((item) => item.source === "postal_code" && item.target === "310115")).toBe(true);
+  expect(result.evidence?.some((item) => item.source === "postal_code" && item.target === "110105")).toBe(false);
+});
+
 test("keeps duplicate region names as unresolved candidates", () => {
   const parser = createZhAddressParser({
     dataset: {
