@@ -40,6 +40,14 @@ test("parses street without treating a road name as another city", () => {
   expect(result.addressLine?.value).toBe("星河湾A区23号楼1703号");
 });
 
+test("does not infer recipient name from address-only text with phone", () => {
+  const roadLikeName = parseZhAddress("北京市朝阳区安定路88号 13826001234");
+  const placeLikeName = parseZhAddress("上海市长宁区程家桥路99号 13826002345");
+
+  expect(roadLikeName.recipientName).toBeUndefined();
+  expect(placeLikeName.recipientName).toBeUndefined();
+});
+
 test("parses province shorthand with suffixless city and district names", () => {
   const result = parseZhAddress("鲁青岛李沧青禾路澄园3号楼 陈晏宁 15166000705");
 

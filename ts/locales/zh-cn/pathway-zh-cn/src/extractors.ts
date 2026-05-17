@@ -189,8 +189,8 @@ function firstName(input: string, excludes: ParseSpan[], maxLength: number) {
   if (phoneAdjacent) {
     return phoneAdjacent;
   }
-  const spaced = /(?:^|\s)([\u4E00-\u9FA5]{2,4})(?=\s|$)/g;
-  for (const match of input.matchAll(spaced)) {
+  const separated = /(?:^|[\s,，;；/|｜\-\t])([\u4E00-\u9FA5]{2,4})(?=$|[\s,，;；/|｜\-\t。.])/g;
+  for (const match of input.matchAll(separated)) {
     if (match.index === undefined) {
       continue;
     }
@@ -198,27 +198,6 @@ function firstName(input: string, excludes: ParseSpan[], maxLength: number) {
     const start = match.index + match[0].lastIndexOf(match[1]);
     if (!overlapsAny(start, start + value.length, excludes) && looksLikeName(value)) {
       return { end: start + value.length, raw: value, start };
-    }
-  }
-  const delimited = /(?:^|\t)([\u4E00-\u9FA5]{2,4})(?=\t)/g;
-  for (const match of input.matchAll(delimited)) {
-    if (match.index === undefined) {
-      continue;
-    }
-    const value = match[1].slice(0, maxLength);
-    const start = match.index + match[0].lastIndexOf(match[1]);
-    if (!overlapsAny(start, start + value.length, excludes) && looksLikeName(value)) {
-      return { end: start + value.length, raw: value, start };
-    }
-  }
-  const pattern = /[\u4E00-\u9FA5]{2,6}/g;
-  for (const match of input.matchAll(pattern)) {
-    if (match.index === undefined || overlapsAny(match.index, match.index + match[0].length, excludes)) {
-      continue;
-    }
-    const value = match[0].slice(0, maxLength);
-    if (looksLikeName(value)) {
-      return { end: match.index + value.length, raw: value, start: match.index };
     }
   }
   return null;
