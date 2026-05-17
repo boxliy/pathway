@@ -21,36 +21,82 @@ landing:
 
 Use this repository policy as the working contract for automated changes in Pathway.
 
-Pathway is a multilingual address and contact parsing SDK. The repository is organized
-as a language-family workspace: TypeScript is the active implementation area, while
-Rust and Go are reserved for future SDK targets. Stay within the assigned issue scope
-and avoid expanding work across language targets unless the issue explicitly asks for it.
+Pathway is a multilingual address and contact parsing SDK. TypeScript is the active
+implementation area. Rust and Go are placeholders for future SDK targets; do not modify
+them unless the assigned issue explicitly asks for those targets.
 
-The managed agent is responsible for one assigned issue at a time and must work inside
-the workspace assigned for that issue. Do not start unrelated work, widen the issue scope,
-or invent lifecycle transitions that are not represented by project state, tracker
-records, or PR state.
+The active TypeScript packages are:
 
-Use the repository's package-manager scripts whenever an equivalent task exists. The
-normal repository gate is the ordered `[execution].canonicalize_commands` followed by
-`[execution].verify_commands`; for this repository that means running the TypeScript
-build and test commands declared above. Do not claim work is complete, fixed, reviewed,
-or ready to land without fresh evidence from that gate or a narrower command that
-directly proves the claim.
+- `ts/core/pathway-core`: shared parser contracts, parse result types, spans, fields,
+  evidence, candidates, scoring primitives, and text utilities.
+- `ts/locales/zh-cn/pathway-zh-cn-data`: Simplified Chinese region, postal-code, street,
+  and administrative-code evidence built from `china-division` plus local evidence.
+- `ts/locales/zh-cn/pathway-zh-cn`: the Chinese address/contact parser, including
+  normalization, label detection, entity extraction, region resolution, address-line
+  extraction, scoring, warnings, and public parser exports.
+
+The managed agent is responsible for one assigned issue at a time. Stay inside the issue
+scope and the relevant package boundary. Do not expand work across packages, language
+targets, or parsing domains unless the issue requires it.
+
+Use repository-native commands. The normal gate is the ordered
+`[execution].canonicalize_commands` followed by `[execution].verify_commands`; for this
+repository that means:
+
+```sh
+pnpm --dir ts run build
+pnpm --dir ts run test
+```
+
+Do not claim work is complete, fixed, reviewed, or ready to land without fresh evidence
+from that gate or a narrower command that directly proves the assigned change.
+
+For parser changes, preserve the public result contract:
+
+- Keep legacy top-level fields such as `recipientName`, `phone`, `idCard`, `postalCode`,
+  `addressLine`, `region`, `tokens`, and `warnings` compatible unless the issue requests
+  a breaking change.
+- Keep `components`, `fields`, `evidence`, and `candidates` useful for callers that need
+  explainability.
+- Prefer evidence-backed behavior over silent heuristics. When behavior is uncertain,
+  use confidence, candidates, evidence, or warnings instead of pretending the parse is
+  certain.
+- Do not degrade checksum validation, postal-code evidence, ID-card region evidence,
+  ambiguous region handling, hierarchy inference, street resolution, or traditional to
+  simplified normalization without an explicit issue requirement.
+
+For zh-cn data work:
+
+- Treat region codes, postal evidence, street evidence, aliases, and suffix handling as
+  user-visible parser behavior.
+- Add or adjust focused tests when changing data normalization, alias generation,
+  hierarchy lookup, postal evidence, or street evidence.
+- Avoid duplicating large region datasets manually. Prefer the existing data package and
+  helper functions.
+
+For extractor and heuristic work:
+
+- Keep labels, phone numbers, ID cards, postal codes, names, and address-line spans from
+  overlapping accidentally.
+- Be conservative with name extraction when there is little context. Add regression cases
+  for false positives and false negatives.
+- Keep parser output deterministic. Do not introduce network calls, time-dependent
+  behavior, or environment-dependent parsing.
 
 The normal implementation path is:
 
-1. Read the assigned issue, the current work state, this workflow policy, and the files
-   needed to understand the requested change.
-2. Make the smallest coherent code, test, and documentation changes required by the
-   issue. Runtime behavior changes should update relevant package docs or reference
-   material when this repository maintains them.
-3. Use repository-native commands for build, validation, and tests.
-4. Keep commit messages focused on the change itself; do not hand-write lifecycle state
-   into commit messages unless this repository explicitly requires it.
+1. Read the assigned issue, this workflow policy, the startup context, and the files
+   needed to understand the requested parser behavior.
+2. Make the smallest coherent code, test, and package documentation changes required by
+   the issue.
+3. Add or update tests close to the changed behavior. Use synthetic golden coverage when
+   the behavior needs broad corpus protection.
+4. Run the narrowest useful validation while iterating, then run the repository gate
+   before terminal success.
 5. Push the work branch and create or update the PR through the configured project flow.
-6. Leave issue progress, terminal records, review handoff, repair completion, and closeout
-   through the declared tracker tools when tracker writeback is enabled.
+6. Leave issue progress, attempt results, terminal records, review handoff, repair
+   completion, and closeout through the declared tracker tools when tracker writeback is
+   enabled.
 
 Treat `context.read_first` as required startup context. The runtime may inline small
 repository-relative files in the first turn; larger files are listed with path, size, and
@@ -93,7 +139,8 @@ Review work must be bounded and evidence-based:
 
 - Review the current diff or current retained workspace, not memory of an older attempt.
 - Check implementation correctness, regression risk, missing tests, docs/config drift,
-  package API fallout, operator-facing fallout, and recovery behavior.
+  package API fallout, parser output compatibility, corpus coverage, and recovery
+  behavior.
 - Treat outside review comments as candidate findings to validate against the current
   code, not automatic truth.
 - Fix the smallest coherent batch, rerun the relevant gate, and record the review outcome
@@ -105,15 +152,6 @@ Keep secrets out of every durable surface: issue comments, PR bodies, commit mes
 logs, state files, snapshots, metrics labels, and test fixtures. Use environment variables
 or configured secret references for provider tokens. If a command prints a token or private
 value, stop and treat the workspace as needing cleanup before continuing.
-
-Do not implement localization by checking concrete language tag strings in runtime logic.
-Do not add branches like `if language == "zh-TW"` or
-`match base_language(language) { "zh" => ... }` to select human prose. Prefer
-agent-provided structured fields, explicit localization resources with supported locale
-semantics, or stable machine-oriented English with documented exceptions.
-
-Keep provider-specific behavior behind the existing provider abstractions unless the
-issue explicitly asks to change the abstraction.
 
 Keep branch, workspace, and worktree behavior aligned with the repository policy and state
 store. Do not reuse another issue's workspace, do not delete retained work manually to
