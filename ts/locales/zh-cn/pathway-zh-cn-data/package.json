@@ -17,9 +17,11 @@
     "build": "tsup",
     "test": "jest"
   },
+  "dependencies": {
+    "china-division": "2.7.0"
+  },
   "devDependencies": {
     "@types/jest": "*",
-    "china-division": "2.7.0",
     "jest": "*",
     "ts-jest": "*",
     "tsup": "*",
