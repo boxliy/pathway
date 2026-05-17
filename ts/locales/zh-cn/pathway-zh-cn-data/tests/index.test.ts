@@ -49,3 +49,49 @@ test("normalizes names and aliases for lookup", () => {
   expect(index.lookupByName("陕西").map((region) => region.code)).toContain("61");
   expect(index.lookupByName("丈八沟").map((region) => region.code)).toContain("610113007");
 });
+
+test("indexes province-level short aliases", () => {
+  const index = createDefaultZhCnRegionIndex();
+  const cases = [
+    ["京", "11"],
+    ["津", "12"],
+    ["冀", "13"],
+    ["晋", "14"],
+    ["蒙", "15"],
+    ["辽", "21"],
+    ["吉", "22"],
+    ["黑", "23"],
+    ["沪", "31"],
+    ["苏", "32"],
+    ["浙", "33"],
+    ["皖", "34"],
+    ["闽", "35"],
+    ["赣", "36"],
+    ["鲁", "37"],
+    ["豫", "41"],
+    ["鄂", "42"],
+    ["湘", "43"],
+    ["粤", "44"],
+    ["桂", "45"],
+    ["琼", "46"],
+    ["渝", "50"],
+    ["川", "51"],
+    ["蜀", "51"],
+    ["黔", "52"],
+    ["贵", "52"],
+    ["滇", "53"],
+    ["云", "53"],
+    ["藏", "54"],
+    ["陕", "61"],
+    ["秦", "61"],
+    ["甘", "62"],
+    ["陇", "62"],
+    ["青", "63"],
+    ["宁", "64"],
+    ["新", "65"],
+  ];
+
+  for (const [alias, code] of cases) {
+    expect(index.lookupByName(alias).map((region) => region.code)).toContain(code);
+  }
+});

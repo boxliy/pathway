@@ -10,7 +10,7 @@ const syntheticCases = createSyntheticCases();
 const parser = createZhAddressParser();
 
 test("generates a broad synthetic validation corpus", () => {
-  expect(syntheticCases).toHaveLength(740);
+  expect(syntheticCases).toHaveLength(1036);
 });
 
 test.each(syntheticCases)("parses synthetic golden address %# - $note", ({ expected, input }) => {

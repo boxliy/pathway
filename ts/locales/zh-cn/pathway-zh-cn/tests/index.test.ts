@@ -40,6 +40,24 @@ test("parses street without treating a road name as another city", () => {
   expect(result.addressLine?.value).toBe("星河湾A区23号楼1703号");
 });
 
+test("parses province shorthand with suffixless city and district names", () => {
+  const result = parseZhAddress("鲁青岛李沧青禾路澄园3号楼 陈晏宁 15166000705");
+
+  expect(result.region?.province?.name).toBe("山东省");
+  expect(result.region?.city?.name).toBe("青岛市");
+  expect(result.region?.district?.name).toBe("李沧区");
+  expect(result.addressLine?.value).toBe("青禾路澄园3号楼");
+});
+
+test("parses separated shorthand region components without required suffixes", () => {
+  const result = parseZhAddress("粤 深圳 南山 科苑路15号A座 赵念辰 13826001234");
+
+  expect(result.region?.province?.name).toBe("广东省");
+  expect(result.region?.city?.name).toBe("深圳市");
+  expect(result.region?.district?.name).toBe("南山区");
+  expect(result.addressLine?.value).toBe("科苑路15号A座");
+});
+
 test("parses tagged traditional Chinese input", () => {
   const result = parseZhAddress("收貨人:李節霽 | 手機:151-8023-1234 | 地址:浙江省金華市婺城區西關街道金磐路");
 

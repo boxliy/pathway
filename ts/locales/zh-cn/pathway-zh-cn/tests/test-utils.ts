@@ -164,7 +164,7 @@ const regionSeeds: RegionSeed[] = [
   { city: "深圳市", district: "南山区", districtCode: "440305", postalCode: "518052", province: "广东省" },
 ];
 
-const variantCount = 20;
+const variantCount = 28;
 
 export function buildSyntheticIdCard(districtCode: string, date: string, sequence: string | number) {
   const normalizedSequence = String(sequence).padStart(3, "0");
@@ -217,8 +217,8 @@ function createSyntheticCase(seed: RegionSeed, seedIndex: number, variant: numbe
   const serial = seedIndex * variantCount + variant;
   const name = names[serial % names.length];
   const phone = mobileFor(serial);
-  const idCard = [0, 3, 8, 10, 12, 14, 16, 18].includes(variant)
-    ? buildSyntheticIdCard(seed.districtCode, birthDateFor(serial), 100 + serial)
+  const idCard = [0, 3, 8, 10, 12, 14, 16, 18, 24].includes(variant)
+    ? buildSyntheticIdCard(seed.districtCode, birthDateFor(serial), 100 + (serial % 800))
     : undefined;
   const regionText = regionTextFor(seed, variant);
   const expectedAddressLine = addressLineFor(seed, serial, variant);
@@ -229,7 +229,7 @@ function createSyntheticCase(seed: RegionSeed, seedIndex: number, variant: numbe
     district: seed.district,
     idCard,
     phone,
-    postalCode: [0, 1, 4, 5, 7, 8, 10, 11, 12, 13, 15, 17, 19].includes(variant) ? seed.postalCode : undefined,
+    postalCode: [0, 1, 4, 5, 7, 8, 10, 11, 12, 13, 15, 17, 19, 23].includes(variant) ? seed.postalCode : undefined,
     province: seed.province,
     recipientName: name,
     street: variant === 1 ? seed.street : undefined,
@@ -261,6 +261,9 @@ function inputForVariant(params: {
   variant: number;
 }) {
   const { expected, idCard, inputAddressLine, name, phone, regionText, seed, variant } = params;
+  const provinceShort = provinceShortFor(seed.province);
+  const cityShort = regionNameWithoutSuffix(seed.city);
+  const districtShort = regionNameWithoutSuffix(seed.district);
   switch (variant) {
     case 0:
       return `收货人:${name} 手机:${formatMobile(phone, "-")} 身份证:${idCard} 地址:${regionText}${inputAddressLine} 邮编:${expected.postalCode}`;
@@ -300,8 +303,24 @@ function inputForVariant(params: {
       return `${expected.postalCode}\t${formatMobile(phone, " ")}\t${name}\t${regionText}\t${inputAddressLine}`;
     case 18:
       return `<name>${name}</name><phone>${phone}</phone><id>${idCard}</id><addr>${regionText}${inputAddressLine}</addr>`;
-    default:
+    case 19:
       return `手机=${formatMobile(phone, "-")}；收货人=${name}；邮编=${expected.postalCode}；地址=${regionText}${inputAddressLine}`;
+    case 20:
+      return `${provinceShort}${cityShort}${districtShort}${inputAddressLine} ${name} ${phone}`;
+    case 21:
+      return `${provinceShort} ${cityShort} ${districtShort} ${inputAddressLine} ${formatMobile(phone, " ")} ${name}`;
+    case 22:
+      return `${cityShort}${districtShort}${inputAddressLine} ${name} ${formatMobile(phone, "-")}`;
+    case 23:
+      return `${districtShort}${inputAddressLine} ${name} ${phone} ${expected.postalCode}`;
+    case 24:
+      return `${provinceShort}/${cityShort}/${districtShort}/${inputAddressLine}/${name}/${phone}/${idCard}`;
+    case 25:
+      return `${provinceShort}-${cityShort}-${districtShort}-${inputAddressLine};${name};${formatMobile(phone, "-")}`;
+    case 26:
+      return `地区 ${provinceShort} ${cityShort}${districtShort} 地址 ${inputAddressLine} 联系 ${phone} 收件 ${name}`;
+    default:
+      return `${name} ${formatMobile(phone, " ")} ${provinceShort}${cityShort} ${districtShort}${inputAddressLine}`;
   }
 }
 
@@ -367,4 +386,51 @@ function traditionalAddress(value: string) {
     .replace(/区/g, "區")
     .replace(/东/g, "東")
     .replace(/门/g, "門");
+}
+
+function regionNameWithoutSuffix(value: string) {
+  const suffixes = ["维吾尔自治区", "壮族自治区", "回族自治区", "自治区", "省", "市", "区", "县"];
+  for (const suffix of suffixes) {
+    if (value.endsWith(suffix) && value.length > suffix.length + 1) {
+      return value.slice(0, -suffix.length);
+    }
+  }
+  return value;
+}
+
+function provinceShortFor(province: string) {
+  const aliases: Record<string, string> = {
+    上海市: "沪",
+    云南省: "滇",
+    内蒙古自治区: "蒙",
+    北京市: "京",
+    吉林省: "吉",
+    四川省: "川",
+    天津市: "津",
+    宁夏回族自治区: "宁",
+    安徽省: "皖",
+    山东省: "鲁",
+    山西省: "晋",
+    广东省: "粤",
+    广西壮族自治区: "桂",
+    新疆维吾尔自治区: "新",
+    江苏省: "苏",
+    江西省: "赣",
+    河北省: "冀",
+    河南省: "豫",
+    浙江省: "浙",
+    海南省: "琼",
+    湖北省: "鄂",
+    湖南省: "湘",
+    甘肃省: "陇",
+    福建省: "闽",
+    西藏自治区: "藏",
+    贵州省: "黔",
+    辽宁省: "辽",
+    重庆市: "渝",
+    陕西省: "陕",
+    青海省: "青",
+    黑龙江省: "黑",
+  };
+  return aliases[province] ?? regionNameWithoutSuffix(province);
 }

@@ -185,6 +185,21 @@ function firstName(input: string, excludes: ParseSpan[], maxLength: number) {
       return { end: start + value.length, raw: value, start };
     }
   }
+  const phoneAdjacent = firstPhoneAdjacentName(input, excludes, maxLength);
+  if (phoneAdjacent) {
+    return phoneAdjacent;
+  }
+  const spaced = /(?:^|\s)([\u4E00-\u9FA5]{2,4})(?=\s|$)/g;
+  for (const match of input.matchAll(spaced)) {
+    if (match.index === undefined) {
+      continue;
+    }
+    const value = match[1].slice(0, maxLength);
+    const start = match.index + match[0].lastIndexOf(match[1]);
+    if (!overlapsAny(start, start + value.length, excludes) && looksLikeName(value)) {
+      return { end: start + value.length, raw: value, start };
+    }
+  }
   const delimited = /(?:^|\t)([\u4E00-\u9FA5]{2,4})(?=\t)/g;
   for (const match of input.matchAll(delimited)) {
     if (match.index === undefined) {
@@ -204,6 +219,34 @@ function firstName(input: string, excludes: ParseSpan[], maxLength: number) {
     const value = match[0].slice(0, maxLength);
     if (looksLikeName(value)) {
       return { end: match.index + value.length, raw: value, start: match.index };
+    }
+  }
+  return null;
+}
+
+function firstPhoneAdjacentName(input: string, excludes: ParseSpan[], maxLength: number) {
+  const phonePattern = /((?:\+?86[- ]?)?1[3-9]\d[- ]?\d{4}[- ]?\d{4})|(?:0\d{2,3}[- ]?\d{7,8}(?:[- ]?\d{1,6})?)/g;
+  for (const match of input.matchAll(phonePattern)) {
+    if (match.index === undefined) {
+      continue;
+    }
+    const beforeText = input.slice(0, match.index);
+    const before = /([\u4E00-\u9FA5]{2,4})[\s,，;；/|｜-]*$/.exec(beforeText);
+    if (before?.index !== undefined) {
+      const value = before[1].slice(0, maxLength);
+      const start = before.index + before[0].indexOf(before[1]);
+      if (!overlapsAny(start, start + value.length, excludes) && looksLikeName(value)) {
+        return { end: start + value.length, raw: value, start };
+      }
+    }
+
+    const after = /^[\s,，;；/|｜-]+([\u4E00-\u9FA5]{2,4})/.exec(input.slice(match.index + match[0].length));
+    if (after) {
+      const start = match.index + match[0].length + after[0].lastIndexOf(after[1]);
+      const value = after[1].slice(0, maxLength);
+      if (!overlapsAny(start, start + value.length, excludes) && looksLikeName(value)) {
+        return { end: start + value.length, raw: value, start };
+      }
     }
   }
   return null;

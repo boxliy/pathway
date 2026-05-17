@@ -71,6 +71,7 @@ export class RegionMatcher {
   private readonly aliases: Array<{ entry: RegionEntry; value: string }> = [];
   private readonly byCode = new Map<string, RegionEntry>();
   private readonly entries: RegionEntry[] = [];
+  private readonly shortProvinceAliases: Array<{ entry: RegionEntry; value: string }> = [];
   private readonly trie = new TextTrie<RegionEntry>();
 
   constructor(dataset: RegionDataset) {
@@ -81,6 +82,10 @@ export class RegionMatcher {
       const aliases = new Set([entry.name, ...entry.aliases, entry.level === "street" ? "" : suffixAlias(entry.name)].filter(Boolean));
       for (const alias of aliases) {
         const value = normalizeZhText(alias);
+        if (entry.level === "province" && value.length === 1) {
+          this.shortProvinceAliases.push({ entry, value });
+          continue;
+        }
         this.aliases.push({ entry, value });
         this.trie.insert(value, entry);
       }
@@ -94,7 +99,9 @@ export class RegionMatcher {
   match(input: string): RegionCandidate[] {
     const trieMatches = this.trie.matchAll(input);
     const aliasMatches = this.matchAliases(input);
-    return uniqueMatches([...trieMatches, ...aliasMatches])
+    const textMatches = uniqueMatches([...trieMatches, ...aliasMatches]);
+    const shortProvinceMatches = this.matchShortProvinceAliases(input, textMatches);
+    return uniqueMatches([...textMatches, ...shortProvinceMatches])
       .map((match) => {
         const span = spanFromMatch(match);
         const evidence = [regionEvidence("region_text_match", "text", match.raw, match.data.code, scoreRegionMatch(match), span)];
@@ -129,6 +136,44 @@ export class RegionMatcher {
     return matches;
   }
 
+  private matchShortProvinceAliases(input: string, contextMatches: Array<TrieMatch<RegionEntry>>): Array<TrieMatch<RegionEntry>> {
+    const matches: Array<TrieMatch<RegionEntry>> = [];
+    for (const alias of this.shortProvinceAliases) {
+      let start = input.indexOf(alias.value);
+      while (start >= 0) {
+        const end = start + alias.value.length;
+        if (this.hasNearbyDescendantMatch(input, end, alias.entry, contextMatches)) {
+          matches.push({
+            data: alias.entry,
+            end,
+            normalized: alias.value,
+            raw: input.slice(start, end),
+            start,
+          });
+        }
+        start = input.indexOf(alias.value, start + 1);
+      }
+    }
+    return matches;
+  }
+
+  private hasNearbyDescendantMatch(
+    input: string,
+    aliasEnd: number,
+    province: RegionEntry,
+    contextMatches: Array<TrieMatch<RegionEntry>>,
+  ) {
+    return contextMatches.some((match) => {
+      if (!isDescendantOf(match.data, province)) {
+        return false;
+      }
+      if (match.start < aliasEnd || match.start - aliasEnd > 8) {
+        return false;
+      }
+      return /^[\s,;:/|｜\-]*$/.test(input.slice(aliasEnd, match.start));
+    });
+  }
+
   private addRegion(region: RegionNode, parent?: RegionEntry) {
     const entry: RegionEntry = {
       aliases: region.aliases ?? [],
@@ -143,6 +188,17 @@ export class RegionMatcher {
       this.addRegion(child, entry);
     }
   }
+}
+
+function isDescendantOf(entry: RegionEntry, ancestor: RegionEntry) {
+  let current: RegionEntry | undefined = entry;
+  while (current) {
+    if (current.code === ancestor.code) {
+      return true;
+    }
+    current = current.parent;
+  }
+  return false;
 }
 
 function uniqueMatches(matches: Array<TrieMatch<RegionEntry>>) {
@@ -446,7 +502,7 @@ function scoreChain(states: CandidateState[]) {
   return states.reduce((total, state) => total + state.score, 0)
     + deepest * 0.03
     + textCount * 0.08
-    + (strongEvidence ? 0.12 : 0)
+    + (strongEvidence ? 0.55 : 0)
     - overlappingTextPenalty(states);
 }
 
