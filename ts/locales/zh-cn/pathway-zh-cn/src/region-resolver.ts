@@ -10,7 +10,7 @@ import {
   type RegionNode,
   type TrieMatch,
 } from "@pathway/core";
-import { suffixAlias } from "./dataset";
+import { removeZhCnRegionSuffix } from "@pathway/zh-cn-data";
 import type { EntityCandidate } from "./extractors";
 import { normalizeZhText } from "./normalizer";
 
@@ -79,7 +79,7 @@ export class RegionMatcher {
       this.addRegion(region);
     }
     for (const entry of this.entries) {
-      const aliases = new Set([entry.name, ...entry.aliases, entry.level === "street" ? "" : suffixAlias(entry.name)].filter(Boolean));
+      const aliases = new Set([entry.name, ...entry.aliases, entry.level === "street" ? "" : removeZhCnRegionSuffix(entry.name)].filter(Boolean));
       for (const alias of aliases) {
         const value = normalizeZhText(alias);
         if (entry.level === "province" && value.length === 1) {
@@ -299,10 +299,7 @@ function addEvidenceConflictWarnings(
 
   for (const entity of entities) {
     if (entity.kind === "postal_code") {
-      const codes = [
-        ...(options.evidenceProvider?.postalCodeToRegionCodes?.(String(entity.value)) ?? []),
-        ...codesFromPostalIndex(String(entity.value), options.postalCodeRegions),
-      ];
+      const codes = postalCodeRegionCodes(String(entity.value), options);
       if (codes.length && !codes.some((code) => isSameOrRelatedDistrict(matcher, code, selectedDistrictCode))) {
         pushWarning(warnings, "postal_code_region_conflict");
       }
@@ -384,11 +381,7 @@ function addPostalCodeEvidence(
   options: RegionResolverOptions,
 ) {
   const postalCode = String(entity.value);
-  const configured = [
-    ...(options.evidenceProvider?.postalCodeToRegionCodes?.(postalCode) ?? []),
-    ...codesFromPostalIndex(postalCode, options.postalCodeRegions),
-  ];
-  for (const code of [...new Set(configured)]) {
+  for (const code of postalCodeRegionCodes(postalCode, options)) {
     const entry = matcher.findByCode(code);
     if (!entry) {
       continue;
@@ -400,6 +393,14 @@ function addPostalCodeEvidence(
       0.84,
     );
   }
+}
+
+function postalCodeRegionCodes(postalCode: string, options: RegionResolverOptions) {
+  const indexedCodes = codesFromPostalIndex(postalCode, options.postalCodeRegions);
+  if (indexedCodes.length) {
+    return [...new Set(indexedCodes)];
+  }
+  return [...new Set(options.evidenceProvider?.postalCodeToRegionCodes?.(postalCode) ?? [])];
 }
 
 function codesFromPostalIndex(postalCode: string, index?: PostalCodeRegionIndex) {
