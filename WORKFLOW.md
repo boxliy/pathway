@@ -11,7 +11,6 @@ execution:
 context:
   read_first:
     - README.md
-    - ts/package.json
 landing:
   default_merge_method: squash
   allowed_merge_methods:
