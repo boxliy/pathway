@@ -50,6 +50,28 @@ const names = [
   "许初安",
   "何予墨",
   "吕嘉禾",
+  "孔令宸",
+  "曹映然",
+  "严知夏",
+  "华景初",
+  "金若衡",
+  "魏南星",
+  "陶亦澄",
+  "姜晚晴",
+  "谢云舟",
+  "邹予安",
+  "喻清禾",
+  "柏书宁",
+  "章星语",
+  "苏见微",
+  "潘南栀",
+  "葛庭川",
+  "范明舒",
+  "彭以默",
+  "郎书白",
+  "鲁星晚",
+  "韦知遥",
+  "马临风",
 ];
 
 const buildingNames = [
@@ -65,6 +87,16 @@ const buildingNames = [
   "知春庭",
   "棠悦府",
   "南庭雅苑",
+  "映月府",
+  "栖云台",
+  "望舒里",
+  "青棠苑",
+  "朗庭中心",
+  "清越居",
+  "云麓湾",
+  "星澜府",
+  "锦书阁",
+  "见山里",
 ];
 
 const roadNames = [
@@ -80,6 +112,16 @@ const roadNames = [
   "嘉宁路",
   "南浦路",
   "北辰路",
+  "望云路",
+  "清晖街",
+  "星澜大道",
+  "知行路",
+  "映雪巷",
+  "云锦路",
+  "长风街",
+  "南山路",
+  "锦和路",
+  "澄江路",
 ];
 
 const regionSeeds: RegionSeed[] = [
@@ -97,7 +139,32 @@ const regionSeeds: RegionSeed[] = [
   { city: "拉萨市", district: "城关区", districtCode: "540102", postalCode: "850000", province: "西藏自治区", shortRegion: "西藏拉萨市城关区" },
   { city: "济南市", district: "市中区", districtCode: "370103", postalCode: "250002", province: "山东省" },
   { city: "南京市", district: "玄武区", districtCode: "320102", postalCode: "210018", province: "江苏省" },
+  { city: "石家庄市", district: "长安区", districtCode: "130102", postalCode: "050011", province: "河北省" },
+  { city: "太原市", district: "小店区", districtCode: "140105", postalCode: "030032", province: "山西省" },
+  { city: "沈阳市", district: "和平区", districtCode: "210102", postalCode: "110001", province: "辽宁省" },
+  { city: "长春市", district: "南关区", districtCode: "220102", postalCode: "130022", province: "吉林省" },
+  { city: "哈尔滨市", district: "道里区", districtCode: "230102", postalCode: "150010", province: "黑龙江省", shortRegion: "黑龙江哈尔滨市道里区" },
+  { city: "合肥市", district: "庐阳区", districtCode: "340103", postalCode: "230001", province: "安徽省" },
+  { city: "福州市", district: "鼓楼区", districtCode: "350102", postalCode: "350001", province: "福建省" },
+  { city: "南昌市", district: "东湖区", districtCode: "360102", postalCode: "330006", province: "江西省" },
+  { city: "郑州市", district: "金水区", districtCode: "410105", postalCode: "450003", province: "河南省" },
+  { city: "武汉市", district: "武昌区", districtCode: "420106", postalCode: "430061", province: "湖北省" },
+  { city: "长沙市", district: "岳麓区", districtCode: "430104", postalCode: "410006", province: "湖南省" },
+  { city: "海口市", district: "美兰区", districtCode: "460108", postalCode: "570203", province: "海南省" },
+  { city: "成都市", district: "武侯区", districtCode: "510107", postalCode: "610041", province: "四川省" },
+  { city: "贵阳市", district: "南明区", districtCode: "520102", postalCode: "550002", province: "贵州省" },
+  { city: "昆明市", district: "五华区", districtCode: "530102", postalCode: "650032", province: "云南省" },
+  { city: "兰州市", district: "城关区", districtCode: "620102", postalCode: "730030", province: "甘肃省" },
+  { city: "西宁市", district: "城中区", districtCode: "630103", postalCode: "810000", province: "青海省" },
+  { city: "广州市", district: "天河区", districtCode: "440106", postalCode: "510630", province: "广东省" },
+  { city: "苏州市", district: "姑苏区", districtCode: "320508", postalCode: "215008", province: "江苏省" },
+  { city: "杭州市", district: "西湖区", districtCode: "330106", postalCode: "310013", province: "浙江省" },
+  { city: "青岛市", district: "市南区", districtCode: "370202", postalCode: "266001", province: "山东省" },
+  { city: "厦门市", district: "思明区", districtCode: "350203", postalCode: "361001", province: "福建省" },
+  { city: "深圳市", district: "南山区", districtCode: "440305", postalCode: "518052", province: "广东省" },
 ];
+
+const variantCount = 12;
 
 export function buildSyntheticIdCard(districtCode: string, date: string, sequence: string | number) {
   const normalizedSequence = String(sequence).padStart(3, "0");
@@ -139,7 +206,7 @@ export function createSyntheticCases() {
   const cases: SyntheticCase[] = [];
   for (let seedIndex = 0; seedIndex < regionSeeds.length; seedIndex += 1) {
     const seed = regionSeeds[seedIndex];
-    for (let variant = 0; variant < 8; variant += 1) {
+    for (let variant = 0; variant < variantCount; variant += 1) {
       cases.push(createSyntheticCase(seed, seedIndex, variant));
     }
   }
@@ -147,10 +214,10 @@ export function createSyntheticCases() {
 }
 
 function createSyntheticCase(seed: RegionSeed, seedIndex: number, variant: number): SyntheticCase {
-  const serial = seedIndex * 8 + variant;
+  const serial = seedIndex * variantCount + variant;
   const name = names[serial % names.length];
   const phone = mobileFor(serial);
-  const idCard = variant === 0 || variant === 3
+  const idCard = [0, 3, 8, 10].includes(variant)
     ? buildSyntheticIdCard(seed.districtCode, birthDateFor(serial), 100 + serial)
     : undefined;
   const regionText = regionTextFor(seed, variant);
@@ -162,7 +229,7 @@ function createSyntheticCase(seed: RegionSeed, seedIndex: number, variant: numbe
     district: seed.district,
     idCard,
     phone,
-    postalCode: [0, 1, 4, 5, 7].includes(variant) ? seed.postalCode : undefined,
+    postalCode: [0, 1, 4, 5, 7, 8, 10, 11].includes(variant) ? seed.postalCode : undefined,
     province: seed.province,
     recipientName: name,
     street: variant === 1 ? seed.street : undefined,
@@ -209,8 +276,16 @@ function inputForVariant(params: {
       return `姓名:${name},手机号码:${phone},地址:${regionText}${inputAddressLine},邮编:${expected.postalCode}`;
     case 6:
       return `收貨人:${traditionalName(name)} 手機:${formatMobile(phone, "-")} 收件地址:${traditionalRegion(regionText)}${traditionalAddress(inputAddressLine)}`;
-    default:
+    case 7:
       return `联系人 ${name} 电话 ${phone} ${regionText}${inputAddressLine} ${expected.postalCode}`;
+    case 8:
+      return `收货人 ${name}\n手机号码 ${formatMobile(phone, " ")}\n所在地区 ${regionText}\n详细地址 ${inputAddressLine}\n证件号 ${idCard}\n邮编 ${expected.postalCode}`;
+    case 9:
+      return `${regionText}${inputAddressLine}，${name}收，${formatMobile(phone, "-")}`;
+    case 10:
+      return `姓名：${name}；身份证号码：${idCard}；联系电话：${phone}；收货地址：${regionText}${inputAddressLine}；邮政编码：${expected.postalCode}`;
+    default:
+      return `收件人：${name}，手机：${phone}，省市区：${regionText}，地址：${inputAddressLine}，邮编：${expected.postalCode}`;
   }
 }
 
@@ -220,6 +295,9 @@ function regionTextFor(seed: RegionSeed, variant: number) {
   }
   if (variant === 3) {
     return `${seed.city}${seed.district}`;
+  }
+  if (variant === 9) {
+    return seed.shortRegion ?? `${seed.city}${seed.district}`;
   }
   return `${seed.province}${seed.city}${seed.district}`;
 }

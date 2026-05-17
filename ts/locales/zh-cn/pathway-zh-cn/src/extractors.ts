@@ -53,7 +53,7 @@ const knownSurnames = new Set([
   "诸葛", "东方", "皇甫", "尉迟", "公孙", "轩辕", "令狐", "宇文", "长孙", "慕容", "司徒", "司空",
 ]);
 
-const nameSuffixBlockList = ["省", "市", "区", "县", "镇", "街道", "村", "地区", "地址", "电话"];
+const nameSuffixBlockList = ["省", "市", "区", "县", "镇", "街道", "村", "地区", "地址", "电话", "收"];
 
 export function findLabelSpans(input: string): ParseSpan[] {
   const trie = new TextTrie<string>();
@@ -166,6 +166,14 @@ function firstName(input: string, excludes: ParseSpan[], maxLength: number) {
     const value = label[1].slice(0, maxLength);
     if (looksLikeName(value)) {
       const start = label.index + label[0].lastIndexOf(label[1]);
+      return { end: start + value.length, raw: value, start };
+    }
+  }
+  const suffix = /([\u4E00-\u9FA5]{2,6})收/.exec(input);
+  if (suffix?.index !== undefined) {
+    const value = suffix[1].slice(0, maxLength);
+    if (looksLikeName(value)) {
+      const start = suffix.index + suffix[0].indexOf(suffix[1]);
       return { end: start + value.length, raw: value, start };
     }
   }
