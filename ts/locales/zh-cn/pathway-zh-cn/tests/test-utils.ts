@@ -164,7 +164,7 @@ const regionSeeds: RegionSeed[] = [
   { city: "深圳市", district: "南山区", districtCode: "440305", postalCode: "518052", province: "广东省" },
 ];
 
-const variantCount = 12;
+const variantCount = 20;
 
 export function buildSyntheticIdCard(districtCode: string, date: string, sequence: string | number) {
   const normalizedSequence = String(sequence).padStart(3, "0");
@@ -217,7 +217,7 @@ function createSyntheticCase(seed: RegionSeed, seedIndex: number, variant: numbe
   const serial = seedIndex * variantCount + variant;
   const name = names[serial % names.length];
   const phone = mobileFor(serial);
-  const idCard = [0, 3, 8, 10].includes(variant)
+  const idCard = [0, 3, 8, 10, 12, 14, 16, 18].includes(variant)
     ? buildSyntheticIdCard(seed.districtCode, birthDateFor(serial), 100 + serial)
     : undefined;
   const regionText = regionTextFor(seed, variant);
@@ -229,7 +229,7 @@ function createSyntheticCase(seed: RegionSeed, seedIndex: number, variant: numbe
     district: seed.district,
     idCard,
     phone,
-    postalCode: [0, 1, 4, 5, 7, 8, 10, 11].includes(variant) ? seed.postalCode : undefined,
+    postalCode: [0, 1, 4, 5, 7, 8, 10, 11, 12, 13, 15, 17, 19].includes(variant) ? seed.postalCode : undefined,
     province: seed.province,
     recipientName: name,
     street: variant === 1 ? seed.street : undefined,
@@ -284,8 +284,24 @@ function inputForVariant(params: {
       return `${regionText}${inputAddressLine}，${name}收，${formatMobile(phone, "-")}`;
     case 10:
       return `姓名：${name}；身份证号码：${idCard}；联系电话：${phone}；收货地址：${regionText}${inputAddressLine}；邮政编码：${expected.postalCode}`;
-    default:
+    case 11:
       return `收件人：${name}，手机：${phone}，省市区：${regionText}，地址：${inputAddressLine}，邮编：${expected.postalCode}`;
+    case 12:
+      return `[收货人]${name} [地址]${regionText}${inputAddressLine} [手机]${formatMobile(phone, "-")} [身份证]${idCard} [邮编]${expected.postalCode}`;
+    case 13:
+      return `【电话】${formatMobile(phone, " ")}【邮编】${expected.postalCode}【详细地址】${regionText}${inputAddressLine}【联系人】${name}`;
+    case 14:
+      return `{姓名:${name}} {证件:${idCard}} {手机:${phone}} {地区:${regionText}} {详细:${inputAddressLine}}`;
+    case 15:
+      return `地址(${regionText}${inputAddressLine}) 联系人(${name}) 手机(${formatMobile(phone, "-")}) 邮编(${expected.postalCode})`;
+    case 16:
+      return `寄到：${regionText}${inputAddressLine}；收件：${name}；证号：${idCard}；联系：${phone}`;
+    case 17:
+      return `${expected.postalCode}\t${formatMobile(phone, " ")}\t${name}\t${regionText}\t${inputAddressLine}`;
+    case 18:
+      return `<name>${name}</name><phone>${phone}</phone><id>${idCard}</id><addr>${regionText}${inputAddressLine}</addr>`;
+    default:
+      return `手机=${formatMobile(phone, "-")}；收货人=${name}；邮编=${expected.postalCode}；地址=${regionText}${inputAddressLine}`;
   }
 }
 

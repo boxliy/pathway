@@ -1,4 +1,4 @@
-import { createDefaultZhCnRegionIndex, normalizeRegionName } from "./index";
+import { createDefaultZhCnRegionIndex, normalizeRegionName } from "../src";
 
 test("keeps duplicate district names ambiguous", () => {
   const index = createDefaultZhCnRegionIndex();

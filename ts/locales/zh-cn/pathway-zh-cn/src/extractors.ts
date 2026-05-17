@@ -13,6 +13,7 @@ export type EntityCandidate = ParseField & {
 const labelWords = [
   "收货人",
   "收件人",
+  "收件",
   "联系人",
   "联系电话",
   "联系人手机号码",
@@ -28,13 +29,17 @@ const labelWords = [
   "联系地址",
   "送货地址",
   "详细地址",
+  "省市区",
+  "详细",
   "地区",
   "地址",
   "身份证号码",
   "身份证号",
   "身份证",
+  "证件",
   "证件号码",
   "证件号",
+  "证号",
   "邮政编码",
   "邮编",
 ];
@@ -69,7 +74,7 @@ export function findLabelSpans(input: string): ParseSpan[] {
 
 function consumeLabelSeparator(input: string, start: number) {
   let end = start;
-  while (end < input.length && /[\s:：,，|｜-]/.test(input[end])) {
+  while (end < input.length && /[\s:：=,，;；|｜\-\]\[【】()（）{}<>]/.test(input[end])) {
     end += 1;
   }
   return end;
@@ -161,19 +166,33 @@ function firstPostalCode(input: string, excludes: ParseSpan[]) {
 }
 
 function firstName(input: string, excludes: ParseSpan[], maxLength: number) {
-  const label = /(?:收货人|收件人|联系人|姓名)\s*[:：]?\s*([\u4E00-\u9FA5]{2,6})/.exec(input);
-  if (label?.index !== undefined) {
-    const value = label[1].slice(0, maxLength);
-    if (looksLikeName(value)) {
-      const start = label.index + label[0].lastIndexOf(label[1]);
-      return { end: start + value.length, raw: value, start };
+  const labelPatterns = [
+    /<\s*(?:name|recipient|receiver)\s*>\s*([\u4E00-\u9FA5]{2,6})\s*<\s*\/\s*(?:name|recipient|receiver)\s*>/gi,
+    /(?:收货人|收件人|联系人|姓名|收件)\s*[\]】）)}〉>]*\s*[:：=|｜-]?\s*[\[【（({<]*\s*([\u4E00-\u9FA5]{2,6})/g,
+    /(?:收货人|收件人|联系人|姓名|收件)\s*[（(]\s*([\u4E00-\u9FA5]{2,6})\s*[）)]/g,
+  ];
+  for (const pattern of labelPatterns) {
+    const match = firstPatternName(input, pattern, excludes, maxLength);
+    if (match) {
+      return match;
     }
   }
   const suffix = /([\u4E00-\u9FA5]{2,6})收/.exec(input);
   if (suffix?.index !== undefined) {
     const value = suffix[1].slice(0, maxLength);
-    if (looksLikeName(value)) {
-      const start = suffix.index + suffix[0].indexOf(suffix[1]);
+    const start = suffix.index + suffix[0].indexOf(suffix[1]);
+    if (!overlapsAny(start, start + value.length, excludes) && looksLikeName(value)) {
+      return { end: start + value.length, raw: value, start };
+    }
+  }
+  const delimited = /(?:^|\t)([\u4E00-\u9FA5]{2,4})(?=\t)/g;
+  for (const match of input.matchAll(delimited)) {
+    if (match.index === undefined) {
+      continue;
+    }
+    const value = match[1].slice(0, maxLength);
+    const start = match.index + match[0].lastIndexOf(match[1]);
+    if (!overlapsAny(start, start + value.length, excludes) && looksLikeName(value)) {
       return { end: start + value.length, raw: value, start };
     }
   }
@@ -185,6 +204,21 @@ function firstName(input: string, excludes: ParseSpan[], maxLength: number) {
     const value = match[0].slice(0, maxLength);
     if (looksLikeName(value)) {
       return { end: match.index + value.length, raw: value, start: match.index };
+    }
+  }
+  return null;
+}
+
+function firstPatternName(input: string, pattern: RegExp, excludes: ParseSpan[], maxLength: number) {
+  for (const match of input.matchAll(pattern)) {
+    if (match.index === undefined) {
+      continue;
+    }
+    const rawValue = match[1];
+    const value = rawValue.slice(0, maxLength);
+    const start = match.index + match[0].lastIndexOf(rawValue);
+    if (!overlapsAny(start, start + value.length, excludes) && looksLikeName(value)) {
+      return { end: start + value.length, raw: value, start };
     }
   }
   return null;

@@ -1,4 +1,4 @@
-import { createZhAddressParser, parseZhAddress } from "./index";
+import { createZhAddressParser, parseZhAddress } from "../src";
 import {
   buildSyntheticIdCard,
   changeIdChecksum,
@@ -10,7 +10,7 @@ const syntheticCases = createSyntheticCases();
 const parser = createZhAddressParser();
 
 test("generates a broad synthetic validation corpus", () => {
-  expect(syntheticCases).toHaveLength(444);
+  expect(syntheticCases).toHaveLength(740);
 });
 
 test.each(syntheticCases)("parses synthetic golden address %# - $note", ({ expected, input }) => {

@@ -1,4 +1,4 @@
-import { createZhAddressParser, parseZhAddress, zhAddressInternals } from "./index";
+import { createZhAddressParser, parseZhAddress, zhAddressInternals } from "../src";
 import { buildSyntheticIdCard, changeIdChecksum } from "./test-utils";
 
 test("normalizes full-width and traditional labels", () => {

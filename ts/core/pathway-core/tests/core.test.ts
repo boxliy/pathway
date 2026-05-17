@@ -1,4 +1,4 @@
-import { TextTrie, clampConfidence, fullWidthToHalfWidth } from "./index";
+import { TextTrie, clampConfidence, fullWidthToHalfWidth } from "../src";
 
 test("fullWidthToHalfWidth converts common full-width characters", () => {
   expect(fullWidthToHalfWidth("ＡＢＣ１２３　，")).toBe("ABC123 ,");
