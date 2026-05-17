@@ -379,14 +379,23 @@ function flattenSourceRegions(regions: ZhCnRegionSourceNode[]): ZhCnRegionSource
 }
 
 function regionAliases(name: string, level: ZhCnRegionLevel) {
+  return createZhCnRegionAliases(name, level);
+}
+
+export function createZhCnRegionAliases(name: string, level: ZhCnRegionLevel) {
   return unique([
     ...(directAliases[name] ?? []),
-    level === "street" ? "" : suffixAlias(name),
+    level === "street" ? "" : removeZhCnRegionSuffix(name),
     normalizeRegionName(name),
   ].filter(Boolean));
 }
 
-function suffixAlias(name: string) {
+export function preferredZhCnRegionShortAlias(name: string, level: ZhCnRegionLevel) {
+  return createZhCnRegionAliases(name, level).find((alias) => alias.length === 1)
+    ?? removeZhCnRegionSuffix(name);
+}
+
+export function removeZhCnRegionSuffix(name: string) {
   const suffixes = [
     "维吾尔自治区",
     "壮族自治区",

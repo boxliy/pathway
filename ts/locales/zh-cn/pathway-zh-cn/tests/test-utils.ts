@@ -1,4 +1,5 @@
 import type { ParseResult } from "@pathway/core";
+import { preferredZhCnRegionShortAlias, removeZhCnRegionSuffix } from "@pathway/zh-cn-data";
 
 export type SyntheticCase = {
   expected: {
@@ -261,9 +262,9 @@ function inputForVariant(params: {
   variant: number;
 }) {
   const { expected, idCard, inputAddressLine, name, phone, regionText, seed, variant } = params;
-  const provinceShort = provinceShortFor(seed.province);
-  const cityShort = regionNameWithoutSuffix(seed.city);
-  const districtShort = regionNameWithoutSuffix(seed.district);
+  const provinceShort = preferredZhCnRegionShortAlias(seed.province, "province");
+  const cityShort = removeZhCnRegionSuffix(seed.city);
+  const districtShort = removeZhCnRegionSuffix(seed.district);
   switch (variant) {
     case 0:
       return `收货人:${name} 手机:${formatMobile(phone, "-")} 身份证:${idCard} 地址:${regionText}${inputAddressLine} 邮编:${expected.postalCode}`;
@@ -386,51 +387,4 @@ function traditionalAddress(value: string) {
     .replace(/区/g, "區")
     .replace(/东/g, "東")
     .replace(/门/g, "門");
-}
-
-function regionNameWithoutSuffix(value: string) {
-  const suffixes = ["维吾尔自治区", "壮族自治区", "回族自治区", "自治区", "省", "市", "区", "县"];
-  for (const suffix of suffixes) {
-    if (value.endsWith(suffix) && value.length > suffix.length + 1) {
-      return value.slice(0, -suffix.length);
-    }
-  }
-  return value;
-}
-
-function provinceShortFor(province: string) {
-  const aliases: Record<string, string> = {
-    上海市: "沪",
-    云南省: "滇",
-    内蒙古自治区: "蒙",
-    北京市: "京",
-    吉林省: "吉",
-    四川省: "川",
-    天津市: "津",
-    宁夏回族自治区: "宁",
-    安徽省: "皖",
-    山东省: "鲁",
-    山西省: "晋",
-    广东省: "粤",
-    广西壮族自治区: "桂",
-    新疆维吾尔自治区: "新",
-    江苏省: "苏",
-    江西省: "赣",
-    河北省: "冀",
-    河南省: "豫",
-    浙江省: "浙",
-    海南省: "琼",
-    湖北省: "鄂",
-    湖南省: "湘",
-    甘肃省: "陇",
-    福建省: "闽",
-    西藏自治区: "藏",
-    贵州省: "黔",
-    辽宁省: "辽",
-    重庆市: "渝",
-    陕西省: "陕",
-    青海省: "青",
-    黑龙江省: "黑",
-  };
-  return aliases[province] ?? regionNameWithoutSuffix(province);
 }

@@ -1,4 +1,10 @@
-import { createDefaultZhCnRegionIndex, normalizeRegionName } from "../src";
+import {
+  createDefaultZhCnRegionIndex,
+  createZhCnRegionAliases,
+  normalizeRegionName,
+  preferredZhCnRegionShortAlias,
+  removeZhCnRegionSuffix,
+} from "../src";
 
 test("keeps duplicate district names ambiguous", () => {
   const index = createDefaultZhCnRegionIndex();
@@ -46,6 +52,9 @@ test("normalizes names and aliases for lookup", () => {
   const index = createDefaultZhCnRegionIndex();
 
   expect(normalizeRegionName("陝西省")).toBe("陕西省");
+  expect(removeZhCnRegionSuffix("广东省")).toBe("广东");
+  expect(createZhCnRegionAliases("山东省", "province")).toEqual(expect.arrayContaining(["山东", "鲁"]));
+  expect(preferredZhCnRegionShortAlias("山东省", "province")).toBe("鲁");
   expect(index.lookupByName("陕西").map((region) => region.code)).toContain("61");
   expect(index.lookupByName("丈八沟").map((region) => region.code)).toContain("610113007");
 });
