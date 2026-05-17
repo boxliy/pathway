@@ -10,7 +10,7 @@ import {
   type RegionNode,
   type TrieMatch,
 } from "@pathway/core";
-import { suffixAlias } from "./dataset";
+import { removeZhCnRegionSuffix } from "@pathway/zh-cn-data";
 import type { EntityCandidate } from "./extractors";
 import { normalizeZhText } from "./normalizer";
 
@@ -79,7 +79,7 @@ export class RegionMatcher {
       this.addRegion(region);
     }
     for (const entry of this.entries) {
-      const aliases = new Set([entry.name, ...entry.aliases, entry.level === "street" ? "" : suffixAlias(entry.name)].filter(Boolean));
+      const aliases = new Set([entry.name, ...entry.aliases, entry.level === "street" ? "" : removeZhCnRegionSuffix(entry.name)].filter(Boolean));
       for (const alias of aliases) {
         const value = normalizeZhText(alias);
         if (entry.level === "province" && value.length === 1) {
