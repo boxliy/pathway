@@ -7,7 +7,7 @@ import {
   type RegionDataset,
 } from "@pathway/core";
 import { buildTokens, extractAddressLine } from "./address-line";
-import { createDefaultZhDataset, defaultPostalCodeRegions, defaultRegionEvidenceProvider } from "./dataset";
+import { createDefaultZhDataset, defaultRegionEvidenceProvider } from "./dataset";
 import { extractEntities, findInvalidIdCard, findLabelSpans } from "./extractors";
 import { normalizeZhText } from "./normalizer";
 import {
@@ -54,7 +54,6 @@ class ZhAddressParser implements Parser<string, ParseResult> {
     const regionSelection = resolveRegion(this.matcher, normalized, entities, {
       ...this.options,
       evidenceProvider: this.options.evidenceProvider ?? defaultRegionEvidenceProvider,
-      postalCodeRegions: this.options.postalCodeRegions ?? defaultPostalCodeRegions,
     });
     const warnings: string[] = [...regionSelection.warnings];
 
