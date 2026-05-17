@@ -57,9 +57,44 @@ export type ParsedRegion = {
   street?: ParsedRegionPart;
 };
 
+export type ParseEvidence = {
+  confidence: number;
+  message?: string;
+  source: "text" | "postal_code" | "id_card" | "hierarchy" | "heuristic";
+  span?: ParseSpan;
+  target?: string;
+  type: string;
+  value: string;
+};
+
+export type ParseCandidate<T = unknown> = {
+  code?: string;
+  confidence: number;
+  data?: T;
+  evidence: ParseEvidence[];
+  level?: RegionLevel;
+  name: string;
+  score: number;
+  span?: ParseSpan;
+};
+
+export type ParseComponents = {
+  addressLine?: ParseField;
+  idCard?: ParseField;
+  phone?: ParseField;
+  postalCode?: ParseField;
+  recipientName?: ParseField;
+  region?: ParsedRegion;
+};
+
 export type ParseResult = {
   addressLine?: ParseField;
+  candidates?: {
+    regions?: ParseCandidate[];
+  };
+  components?: ParseComponents;
   confidence: number;
+  evidence?: ParseEvidence[];
   fields: Record<string, ParseField | undefined>;
   idCard?: ParseField;
   phone?: ParseField;

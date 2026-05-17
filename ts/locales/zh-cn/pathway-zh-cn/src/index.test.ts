@@ -1,41 +1,43 @@
 import { createZhAddressParser, parseZhAddress, zhAddressInternals } from "./index";
+import { buildSyntheticIdCard, changeIdChecksum } from "./test-utils";
 
 test("normalizes full-width and traditional labels", () => {
-  expect(zhAddressInternals.normalizeZhText("收貨人：張三，手機：１３８００００００００")).toBe("收货人:张三,手机:13800000000");
+  expect(zhAddressInternals.normalizeZhText("收貨人：張書言，手機：１９９２６００１２３４")).toBe("收货人:张書言,手机:19926001234");
 });
 
 test("parses a complete simplified Chinese address", () => {
-  const result = parseZhAddress("张娜，370213199208254024。青岛市李沧区临汾路海怡新城爱百客，15166000705。");
+  const idCard = buildSyntheticIdCard("370213", "19920825", 402);
+  const result = parseZhAddress(`陈晏宁，${idCard}。青岛市李沧区青禾路澄园3号楼，15166000705。`);
 
-  expect(result.recipientName?.value).toBe("张娜");
-  expect(result.idCard?.value).toBe("370213199208254024");
+  expect(result.recipientName?.value).toBe("陈晏宁");
+  expect(result.idCard?.value).toBe(idCard);
   expect(result.phone?.value).toBe("15166000705");
   expect(result.region?.province?.name).toBe("山东省");
   expect(result.region?.city?.name).toBe("青岛市");
   expect(result.region?.district?.name).toBe("李沧区");
-  expect(result.addressLine?.value).toBe("临汾路海怡新城爱百客");
+  expect(result.addressLine?.value).toBe("青禾路澄园3号楼");
 });
 
 test("parses missing province and infers hierarchy from district", () => {
-  const result = parseZhAddress("雁塔区高新四路710061 刘国良 13593464918");
+  const result = parseZhAddress("雁塔区明理路710061 秦星澜 13593464918");
 
   expect(result.region?.province?.name).toBe("陕西省");
   expect(result.region?.city?.name).toBe("西安市");
   expect(result.region?.district?.name).toBe("雁塔区");
   expect(result.postalCode?.value).toBe("710061");
-  expect(result.recipientName?.value).toBe("刘国良");
-  expect(result.addressLine?.value).toBe("高新四路");
+  expect(result.recipientName?.value).toBe("秦星澜");
+  expect(result.addressLine?.value).toBe("明理路");
 });
 
 test("parses street without treating a road name as another city", () => {
-  const result = parseZhAddress("宁夏金凤区上海西路街道阅海万家A区23号楼1703号 李四 13800000000");
+  const result = parseZhAddress("宁夏金凤区上海西路街道星河湾A区23号楼1703号 李若岚 19926001234");
 
   expect(result.region?.province?.name).toBe("宁夏回族自治区");
   expect(result.region?.city?.name).toBe("银川市");
   expect(result.region?.district?.name).toBe("金凤区");
   expect(result.region?.street?.name).toBe("上海西路街道");
   expect(result.region?.city?.name).not.toBe("上海市");
-  expect(result.addressLine?.value).toBe("阅海万家A区23号楼1703号");
+  expect(result.addressLine?.value).toBe("星河湾A区23号楼1703号");
 });
 
 test("parses tagged traditional Chinese input", () => {
@@ -51,7 +53,7 @@ test("parses tagged traditional Chinese input", () => {
 });
 
 test("does not accept an invalid identity card checksum", () => {
-  const result = parseZhAddress("张三 370213199208254025 青岛市李沧区临汾路 15166000705");
+  const result = parseZhAddress(`赵念辰 ${changeIdChecksum(buildSyntheticIdCard("370213", "19920825", 402))} 青岛市李沧区青禾路 15166000705`);
 
   expect(result.idCard).toBeUndefined();
   expect(result.warnings).toContain("id_card_invalid_checksum");
@@ -87,8 +89,71 @@ test("supports caller supplied datasets", () => {
     },
   });
 
-  const result = parser.parse("王五 测试省测试市测试区测试街道一号院 13900000000");
+  const result = parser.parse("王知衡 测试省测试市测试区测试街道一号院 19926002345");
 
   expect(result.region?.street?.code).toBe("S1");
   expect(result.addressLine?.value).toBe("一号院");
+});
+
+test("uses identity card address code as region evidence when text has no region", () => {
+  const idCard = buildSyntheticIdCard("370213", "19920825", 402);
+  const result = parseZhAddress(`陈晏宁 ${idCard} 青禾路澄园3号楼 15166000705`);
+
+  expect(result.region?.province?.name).toBe("山东省");
+  expect(result.region?.city?.name).toBe("青岛市");
+  expect(result.region?.district?.name).toBe("李沧区");
+  expect(result.addressLine?.value).toBe("青禾路澄园3号楼");
+  expect(result.evidence?.some((item) => item.source === "id_card" && item.target === "370213")).toBe(true);
+});
+
+test("keeps duplicate region names as unresolved candidates", () => {
+  const parser = createZhAddressParser({
+    dataset: {
+      regions: [
+        {
+          code: "P1",
+          level: "province",
+          name: "甲省",
+          children: [
+            {
+              code: "C1",
+              level: "city",
+              name: "甲市",
+              children: [{ code: "D1", level: "district", name: "新华区" }],
+            },
+          ],
+        },
+        {
+          code: "P2",
+          level: "province",
+          name: "乙省",
+          children: [
+            {
+              code: "C2",
+              level: "city",
+              name: "乙市",
+              children: [{ code: "D2", level: "district", name: "新华区" }],
+            },
+          ],
+        },
+      ],
+    },
+  });
+
+  const result = parser.parse("新华区明理路1号 王知衡 19926003456");
+
+  expect(result.region?.district?.name).toBe("新华区");
+  expect(result.candidates?.regions?.map((candidate) => candidate.code)).toEqual(expect.arrayContaining(["D1", "D2"]));
+  expect(result.warnings).toContain("ambiguous_region");
+  expect(result.addressLine?.value).toBe("明理路1号");
+});
+
+test("returns parser evidence candidates and components without breaking legacy fields", () => {
+  const result = parseZhAddress("宁夏金凤区上海西路街道星河湾A区23号楼1703号 李若岚 19926001234");
+
+  expect(result.region?.province?.name).toBe("宁夏回族自治区");
+  expect(result.components?.region?.district?.name).toBe("金凤区");
+  expect(result.components?.addressLine?.value).toBe(result.addressLine?.value);
+  expect(result.candidates?.regions?.some((candidate) => candidate.name === "上海市")).toBe(true);
+  expect(result.evidence?.some((item) => item.source === "hierarchy" && item.target === "640106003")).toBe(true);
 });

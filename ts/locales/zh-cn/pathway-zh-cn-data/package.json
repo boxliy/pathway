@@ -1,7 +1,7 @@
 {
-  "name": "@pathway/zh-cn",
+  "name": "@pathway/zh-cn-data",
   "version": "0.1.0",
-  "description": "Pathway Chinese address parser",
+  "description": "Pathway Chinese region data indexes",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -17,22 +17,15 @@
     "build": "tsup",
     "test": "jest"
   },
-  "dependencies": {
-    "@pathway/core": "workspace:*",
-    "@pathway/zh-cn-data": "workspace:*"
-  },
   "devDependencies": {
     "@types/jest": "*",
+    "china-division": "2.7.0",
     "jest": "*",
     "ts-jest": "*",
     "tsup": "*",
     "typescript": "*"
   },
   "jest": {
-    "moduleNameMapper": {
-      "^@pathway/core$": "<rootDir>/../../../core/pathway-core/src/index.ts",
-      "^@pathway/zh-cn-data$": "<rootDir>/../pathway-zh-cn-data/src/index.ts"
-    },
     "preset": "ts-jest",
     "testEnvironment": "node",
     "testMatch": [
