@@ -75,26 +75,3 @@ function toRegionNode(region: ZhCnRegionSourceNode): RegionNode {
     name: region.name,
   };
 }
-
-export function suffixAlias(name: string) {
-  const suffixes = [
-    "维吾尔自治区",
-    "壮族自治区",
-    "回族自治区",
-    "自治区",
-    "特别行政区",
-    "省",
-    "市",
-    "区",
-    "县",
-    "街道",
-    "镇",
-    "乡",
-  ];
-  for (const suffix of suffixes) {
-    if (name.endsWith(suffix) && name.length > suffix.length + 1) {
-      return name.slice(0, -suffix.length);
-    }
-  }
-  return "";
-}
