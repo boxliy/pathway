@@ -17,12 +17,6 @@ landing:
   allowed_merge_methods:
     - merge
     - squash
-language:
-  agent:
-    communication: zh-TW
-  issue:
-    comments: zh-TW
-    records: zh-TW
 ---
 
 Use this repository policy as the working contract for automated changes in Pathway.
