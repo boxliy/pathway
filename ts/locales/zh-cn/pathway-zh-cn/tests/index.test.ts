@@ -163,6 +163,22 @@ test("keeps invalid checksum identity text out of display address in checksum mo
   expect(result.warnings).toContain("id_card_invalid_checksum");
 });
 
+test("extracts checksum-invalid identity card from comma separated address text in shape mode", () => {
+  const result = parseZhAddress(
+    "山东省青岛市李沧区临汾路 28 号，李四，15200000002，370213199208254025",
+    { idCardValidation: "shape", unrecognizedText: "separate" },
+  );
+
+  expect(result.region?.province?.name).toBe("山东省");
+  expect(result.region?.city?.name).toBe("青岛市");
+  expect(result.region?.district?.name).toBe("李沧区");
+  expect(result.displayAddressLine?.value).toBe("临汾路28号");
+  expect(result.recipientName?.value).toBe("李四");
+  expect(result.phone?.value).toBe("15200000002");
+  expect(result.idCard?.value).toBe("370213199208254025");
+  expect(result.warnings).toContain("id_card_invalid_checksum");
+});
+
 test("returns display address with street and separates remark text", () => {
   const result = parseZhAddress(
     "姓名 王五\t电话 15300000003\t浙江省金华市婺城区西关街道金磐路\t证件 330702199503126666 备注易碎",
