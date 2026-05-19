@@ -89,6 +89,7 @@ export function extractEntities(
   options: { idCardValidation?: IdCardValidationMode } = {},
 ): EntityCandidate[] {
   const entities: EntityCandidate[] = [];
+  const idLikeSpans = findIdCardLikeSpans(input);
   const idCard = firstIdCard(input, options.idCardValidation ?? "checksum");
   if (idCard) {
     entities.push({
@@ -96,11 +97,11 @@ export function extractEntities(
       kind: "id_card",
     });
   }
-  const phone = firstPhone(input, entitySpans(entities));
+  const phone = firstPhone(input, [...entitySpans(entities), ...idLikeSpans]);
   if (phone) {
     entities.push({ ...createField(phone.raw.replace(/[^\d]/g, ""), 0.96, "extractor", phone), kind: "phone" });
   }
-  const postalCode = firstPostalCode(input, entitySpans(entities));
+  const postalCode = firstPostalCode(input, [...entitySpans(entities), ...idLikeSpans]);
   if (postalCode) {
     entities.push({ ...createField(postalCode.raw, 0.84, "extractor", postalCode), kind: "postal_code" });
   }
@@ -150,6 +151,22 @@ export function findInvalidIdCard(input: string, entities: EntityCandidate[]) {
     }
   }
   return false;
+}
+
+export function findIdCardLikeSpans(input: string): ParseSpan[] {
+  const pattern = /[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]/g;
+  const spans: ParseSpan[] = [];
+  for (const match of input.matchAll(pattern)) {
+    if (match.index === undefined || !hasValidBirthday(match[0])) {
+      continue;
+    }
+    spans.push({
+      end: match.index + match[0].length,
+      raw: match[0],
+      start: match.index,
+    });
+  }
+  return spans;
 }
 
 function isValidIdCard(value: string) {

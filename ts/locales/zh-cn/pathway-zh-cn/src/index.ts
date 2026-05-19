@@ -6,9 +6,9 @@ import {
   type Parser,
   type RegionDataset,
 } from "@pathway/core";
-import { buildTokens, extractAddressLine } from "./address-line";
+import { buildTokens, createDisplayAddressFields, extractAddressLine } from "./address-line";
 import { createDefaultZhDataset, defaultRegionEvidenceProvider } from "./dataset";
-import { extractEntities, findInvalidIdCard, findLabelSpans, type IdCardValidationMode } from "./extractors";
+import { extractEntities, findIdCardLikeSpans, findInvalidIdCard, findLabelSpans, type IdCardValidationMode } from "./extractors";
 import { normalizeZhText } from "./normalizer";
 import {
   RegionMatcher,
@@ -25,6 +25,7 @@ export type ZhAddressParseOptions = {
   nameMaxLength?: number;
   postalCodeRegions?: PostalCodeRegionIndex;
   strict?: boolean;
+  unrecognizedText?: "address" | "separate";
 };
 
 export function parseZhAddress(input: string, options: ZhAddressParseOptions = {}) {
@@ -73,27 +74,37 @@ class ZhAddressParser implements Parser<string, ParseResult> {
     const addressLine = extractAddressLine(normalized, [
       ...labelSpans,
       ...regionSelection.spans,
+      ...findIdCardLikeSpans(normalized),
       ...entities.map((entity) => entity.span).filter(Boolean) as ParseSpan[],
     ]);
     const addressField = addressLine
       ? createField(addressLine.value, addressLine.confidence, "heuristic", addressLine.span)
       : undefined;
+    const { displayAddressLine, unrecognizedText } = createDisplayAddressFields(
+      addressField,
+      regionValue?.street?.name,
+      this.options.unrecognizedText ?? "address",
+    );
     const fields: Record<string, ParseField | undefined> = {
       addressLine: addressField,
+      displayAddressLine,
       idCard: entities.find((entity) => entity.kind === "id_card"),
       phone: entities.find((entity) => entity.kind === "phone"),
       postalCode: entities.find((entity) => entity.kind === "postal_code"),
       recipientName: entities.find((entity) => entity.kind === "name"),
+      unrecognizedText,
     };
     const tokens = buildTokens(normalized, labelSpans, regionSelection.spans, entities, addressField);
     const confidence = scoreResult(regionValue, fields, warnings);
     const components = {
       addressLine: fields.addressLine,
+      displayAddressLine: fields.displayAddressLine,
       idCard: fields.idCard,
       phone: fields.phone,
       postalCode: fields.postalCode,
       recipientName: fields.recipientName,
       region: regionValue,
+      unrecognizedText: fields.unrecognizedText,
     };
 
     return {
@@ -103,6 +114,7 @@ class ZhAddressParser implements Parser<string, ParseResult> {
       },
       components,
       confidence,
+      displayAddressLine: fields.displayAddressLine,
       evidence: regionSelection.evidence,
       fields,
       idCard: fields.idCard,
@@ -112,6 +124,7 @@ class ZhAddressParser implements Parser<string, ParseResult> {
       recipientName: fields.recipientName,
       region: regionValue,
       tokens,
+      unrecognizedText: fields.unrecognizedText,
       warnings,
     };
   }

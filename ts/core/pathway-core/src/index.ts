@@ -80,11 +80,13 @@ export type ParseCandidate<T = unknown> = {
 
 export type ParseComponents = {
   addressLine?: ParseField;
+  displayAddressLine?: ParseField;
   idCard?: ParseField;
   phone?: ParseField;
   postalCode?: ParseField;
   recipientName?: ParseField;
   region?: ParsedRegion;
+  unrecognizedText?: ParseField;
 };
 
 export type ParseResult = {
@@ -96,6 +98,7 @@ export type ParseResult = {
   confidence: number;
   evidence?: ParseEvidence[];
   fields: Record<string, ParseField | undefined>;
+  displayAddressLine?: ParseField;
   idCard?: ParseField;
   phone?: ParseField;
   postalCode?: ParseField;
@@ -103,6 +106,7 @@ export type ParseResult = {
   recipientName?: ParseField;
   region?: ParsedRegion;
   tokens: ParseToken[];
+  unrecognizedText?: ParseField;
   warnings: string[];
 };
 

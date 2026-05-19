@@ -1,4 +1,5 @@
 import {
+  createField,
   type ParseField,
   type ParseSpan,
   type ParseToken,
@@ -40,6 +41,23 @@ export function extractAddressLine(input: string, spans: ParseSpan[]) {
   };
 }
 
+export function createDisplayAddressFields(
+  addressLine: ParseField | undefined,
+  streetName: string | undefined,
+  mode: "address" | "separate",
+) {
+  const baseValue = displayAddressValue(addressLine?.value ?? "", streetName);
+  const parts = splitDisplayAddress(baseValue, mode);
+  const displayAddressLine = parts.address
+    ? createField(parts.address, addressLine?.confidence ?? 0.7, "heuristic", addressLine?.span)
+    : undefined;
+  const unrecognizedText = parts.unrecognizedText
+    ? createField(parts.unrecognizedText, 0.54, "heuristic")
+    : undefined;
+
+  return { displayAddressLine, unrecognizedText };
+}
+
 export function buildTokens(
   input: string,
   labelSpans: ParseSpan[],
@@ -70,6 +88,52 @@ function cleanupAddress(input: string) {
     .replace(/[，,;；:：/|｜\\\-.]+$/, "")
     .replace(/^(省|市|区|县|镇|街道)+/, "")
     .trim();
+}
+
+function displayAddressValue(addressLine: string, streetName?: string) {
+  const line = cleanupDisplayAddress(addressLine);
+  const street = cleanupDisplayAddress(streetName ?? "");
+  if (!street) {
+    return line;
+  }
+  if (!line || line.startsWith(street)) {
+    return line;
+  }
+  return `${street}${line}`;
+}
+
+function splitDisplayAddress(address: string, mode: "address" | "separate") {
+  const value = cleanupDisplayAddress(address);
+  if (mode !== "separate") {
+    return { address: value };
+  }
+
+  const match = /(备注|货号|数量|姓名|电话|手机|证件|身份证|收件人|联系人)\s*[:：=|｜-]?\s*/.exec(value);
+  if (match && match.index > 0) {
+    return {
+      address: cleanupDisplayAddress(value.slice(0, match.index)),
+      unrecognizedText: cleanupDisplayAddress(value.slice(match.index)),
+    };
+  }
+
+  const remarkIndex = value.indexOf("易碎");
+  if (remarkIndex > 0) {
+    return {
+      address: cleanupDisplayAddress(value.slice(0, remarkIndex)),
+      unrecognizedText: `备注${cleanupDisplayAddress(value.slice(remarkIndex))}`,
+    };
+  }
+
+  return { address: value };
+}
+
+function cleanupDisplayAddress(input: string) {
+  return input
+    .replace(/(真实姓名|收件人|联系人|联系电话|电话|手机|证件号|证件|身份证|所在地区|详细地址|地址|收件)\s*[:：=|｜-]?\s*/g, "")
+    .replace(/[【】()[\]（）{}<>]/g, "")
+    .replace(/[\s,，;；:：/|｜\\-]+/g, "")
+    .replace(/^[\s,，;；:：/|｜\\\-.]+/, "")
+    .replace(/[\s,，;；:：/|｜\\\-.]+$/, "");
 }
 
 function spanToToken(span: ParseSpan, kind: ParseToken["kind"]): ParseToken {
