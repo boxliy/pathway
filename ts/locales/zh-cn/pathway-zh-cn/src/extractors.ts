@@ -10,6 +10,8 @@ export type EntityCandidate = ParseField & {
   kind: "phone" | "id_card" | "postal_code" | "name";
 };
 
+export type IdCardValidationMode = "checksum" | "shape";
+
 const labelWords = [
   "收货人",
   "收件人",
@@ -80,11 +82,19 @@ function consumeLabelSeparator(input: string, start: number) {
   return end;
 }
 
-export function extractEntities(input: string, nameMaxLength: number, labelSpans: ParseSpan[]): EntityCandidate[] {
+export function extractEntities(
+  input: string,
+  nameMaxLength: number,
+  labelSpans: ParseSpan[],
+  options: { idCardValidation?: IdCardValidationMode } = {},
+): EntityCandidate[] {
   const entities: EntityCandidate[] = [];
-  const idCard = firstValidIdCard(input);
+  const idCard = firstIdCard(input, options.idCardValidation ?? "checksum");
   if (idCard) {
-    entities.push({ ...createField(idCard.raw.toUpperCase(), 0.99, "extractor", idCard), kind: "id_card" });
+    entities.push({
+      ...createField(idCard.raw.toUpperCase(), idCard.checksumValid ? 0.99 : 0.78, "extractor", idCard),
+      kind: "id_card",
+    });
   }
   const phone = firstPhone(input, entitySpans(entities));
   if (phone) {
@@ -105,26 +115,41 @@ function entitySpans(entities: EntityCandidate[]) {
   return entities.map((entity) => entity.span).filter(Boolean) as ParseSpan[];
 }
 
-function firstValidIdCard(input: string): ParseSpan | null {
+function firstIdCard(input: string, mode: IdCardValidationMode): (ParseSpan & { checksumValid: boolean }) | null {
   const pattern = /[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]/g;
   for (const match of input.matchAll(pattern)) {
     if (match.index === undefined) {
       continue;
     }
     const raw = match[0];
-    if (isValidIdCard(raw)) {
-      return { end: match.index + raw.length, raw, start: match.index };
+    if (!hasValidBirthday(raw)) {
+      continue;
+    }
+    const checksumValid = isValidIdCard(raw);
+    if (checksumValid || mode === "shape") {
+      return { checksumValid, end: match.index + raw.length, raw, start: match.index };
     }
   }
   return null;
 }
 
 export function findInvalidIdCard(input: string, entities: EntityCandidate[]) {
-  const hasValidId = entities.some((entity) => entity.kind === "id_card");
-  if (hasValidId) {
-    return false;
+  const pattern = /[1-9]\d{5}(18|19|20)\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]/g;
+  for (const match of input.matchAll(pattern)) {
+    if (match.index === undefined) {
+      continue;
+    }
+    const raw = match[0];
+    const entity = entities.find((item) =>
+      item.kind === "id_card" && item.span?.start === match.index && item.span.end === match.index + raw.length);
+    if (entity && !isValidIdCard(String(entity.value))) {
+      return true;
+    }
+    if (!entity && hasValidBirthday(raw) && !isValidIdCard(raw)) {
+      return true;
+    }
   }
-  return /[1-9]\d{16}[0-9Xx]/.test(input);
+  return false;
 }
 
 function isValidIdCard(value: string) {
@@ -137,10 +162,24 @@ function isValidIdCard(value: string) {
   if (!regionCodes.has(code.slice(0, 2))) {
     return false;
   }
+  if (!hasValidBirthday(code)) {
+    return false;
+  }
   const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
   const parity = ["1", "0", "X", "9", "8", "7", "6", "5", "4", "3", "2"];
   const sum = weights.reduce((total, weight, index) => total + Number(code[index]) * weight, 0);
   return parity[sum % 11] === code[17];
+}
+
+function hasValidBirthday(value: string) {
+  const year = Number(value.slice(6, 10));
+  const month = Number(value.slice(10, 12));
+  const day = Number(value.slice(12, 14));
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day;
 }
 
 function firstPhone(input: string, excludes: ParseSpan[]) {

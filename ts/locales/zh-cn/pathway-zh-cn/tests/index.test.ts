@@ -85,6 +85,72 @@ test("does not accept an invalid identity card checksum", () => {
   expect(result.warnings).toContain("id_card_invalid_checksum");
 });
 
+test("can extract checksum-invalid identity cards in shape mode", () => {
+  const result = parseZhAddress(
+    "收件人:赵六 手机:15400000004 地址:江苏省南京市玄武区珠江路 88 号 身份证:320102199003078888",
+    { idCardValidation: "shape" },
+  );
+
+  expect(result.recipientName?.value).toBe("赵六");
+  expect(result.phone?.value).toBe("15400000004");
+  expect(result.idCard?.value).toBe("320102199003078888");
+  expect(result.region?.province?.name).toBe("江苏省");
+  expect(result.region?.city?.name).toBe("南京市");
+  expect(result.region?.district?.name).toBe("玄武区");
+  expect(result.addressLine?.value).toBe("珠江路88号");
+  expect(result.warnings).toContain("id_card_invalid_checksum");
+});
+
+test("keeps labels and weak identity card values out of the address line", () => {
+  const cases = [
+    {
+      addressLine: "临汾路28号",
+      district: "李沧区",
+      idCard: "370213199208254025",
+      input: "李四/15200000002/370213199208254025/山东省青岛市李沧区临汾路 28 号",
+      name: "李四",
+      phone: "15200000002",
+      province: "山东省",
+    },
+    {
+      addressLine: "金磐路",
+      district: "婺城区",
+      idCard: "330702199503126666",
+      input: "姓名 王五\t电话 15300000003\t浙江省金华市婺城区西关街道金磐路\t证件 330702199503126666",
+      name: "王五",
+      phone: "15300000003",
+      province: "浙江省",
+    },
+  ];
+
+  for (const item of cases) {
+    const result = parseZhAddress(item.input, { idCardValidation: "shape" });
+
+    expect(result.recipientName?.value).toBe(item.name);
+    expect(result.phone?.value).toBe(item.phone);
+    expect(result.idCard?.value).toBe(item.idCard);
+    expect(result.region?.province?.name).toBe(item.province);
+    expect(result.region?.district?.name).toBe(item.district);
+    expect(result.addressLine?.value).toBe(item.addressLine);
+    expect(result.warnings).toContain("id_card_invalid_checksum");
+  }
+});
+
+test("parses compact municipality addresses with province short aliases", () => {
+  const result = parseZhAddress(
+    "沪浦东南京东路235#26 周八 15600000006 310115199906186666",
+    { idCardValidation: "shape" },
+  );
+
+  expect(result.region?.province?.name).toBe("上海市");
+  expect(result.region?.city?.name).toBe("上海市");
+  expect(result.region?.district?.name).toBe("浦东新区");
+  expect(result.addressLine?.value).toBe("南京东路235#26");
+  expect(result.recipientName?.value).toBe("周八");
+  expect(result.phone?.value).toBe("15600000006");
+  expect(result.idCard?.value).toBe("310115199906186666");
+});
+
 test("supports caller supplied datasets", () => {
   const parser = createZhAddressParser({
     dataset: {

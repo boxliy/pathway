@@ -8,7 +8,7 @@ import {
 } from "@pathway/core";
 import { buildTokens, extractAddressLine } from "./address-line";
 import { createDefaultZhDataset, defaultRegionEvidenceProvider } from "./dataset";
-import { extractEntities, findInvalidIdCard, findLabelSpans } from "./extractors";
+import { extractEntities, findInvalidIdCard, findLabelSpans, type IdCardValidationMode } from "./extractors";
 import { normalizeZhText } from "./normalizer";
 import {
   RegionMatcher,
@@ -21,6 +21,7 @@ import { scoreResult } from "./scorer";
 export type ZhAddressParseOptions = {
   dataset?: RegionDataset;
   evidenceProvider?: RegionEvidenceProvider;
+  idCardValidation?: IdCardValidationMode;
   nameMaxLength?: number;
   postalCodeRegions?: PostalCodeRegionIndex;
   strict?: boolean;
@@ -50,7 +51,9 @@ class ZhAddressParser implements Parser<string, ParseResult> {
   parse(raw: string): ParseResult {
     const normalized = normalizeZhText(raw);
     const labelSpans = findLabelSpans(normalized);
-    const entities = extractEntities(normalized, this.nameMaxLength, labelSpans);
+    const entities = extractEntities(normalized, this.nameMaxLength, labelSpans, {
+      idCardValidation: this.options.idCardValidation,
+    });
     const regionSelection = resolveRegion(this.matcher, normalized, entities, {
       ...this.options,
       evidenceProvider: this.options.evidenceProvider ?? defaultRegionEvidenceProvider,

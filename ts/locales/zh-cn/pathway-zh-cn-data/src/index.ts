@@ -402,6 +402,7 @@ export function removeZhCnRegionSuffix(name: string) {
     "回族自治区",
     "自治区",
     "特别行政区",
+    "新区",
     "省",
     "市",
     "区",

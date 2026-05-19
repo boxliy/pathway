@@ -63,9 +63,11 @@ export function buildTokens(
 
 function cleanupAddress(input: string) {
   return input
-    .replace(/[,:;|()[\]{}<>]/g, " ")
+    .replace(/[,:;|/()[\]{}<>]/g, " ")
     .replace(/\s+/g, "")
     .replace(/^\.+|\.+$/g, "")
+    .replace(/^[，,;；:：/|｜\\\-.]+/, "")
+    .replace(/[，,;；:：/|｜\\\-.]+$/, "")
     .replace(/^(省|市|区|县|镇|街道)+/, "")
     .trim();
 }
