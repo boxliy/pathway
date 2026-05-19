@@ -71,6 +71,7 @@ export class RegionMatcher {
   private readonly aliases: Array<{ entry: RegionEntry; value: string }> = [];
   private readonly byCode = new Map<string, RegionEntry>();
   private readonly entries: RegionEntry[] = [];
+  private readonly shadowableAliases: Array<{ entry: RegionEntry; value: string }> = [];
   private readonly shortProvinceAliases: Array<{ entry: RegionEntry; value: string }> = [];
   private readonly trie = new TextTrie<RegionEntry>();
 
@@ -87,6 +88,9 @@ export class RegionMatcher {
           continue;
         }
         this.aliases.push({ entry, value });
+        if (value.length <= 3 && entry.level !== "street") {
+          this.shadowableAliases.push({ entry, value });
+        }
         this.trie.insert(value, entry);
       }
     }
@@ -98,8 +102,8 @@ export class RegionMatcher {
 
   match(input: string): RegionCandidate[] {
     const trieMatches = this.trie.matchAll(input);
-    const aliasMatches = this.matchAliases(input);
-    const textMatches = uniqueMatches([...trieMatches, ...aliasMatches]);
+    const shadowedMatches = this.matchShadowedAliases(input, trieMatches);
+    const textMatches = uniqueMatches([...trieMatches, ...shadowedMatches]);
     const shortProvinceMatches = this.matchShortProvinceAliases(input, textMatches);
     return uniqueMatches([...textMatches, ...shortProvinceMatches])
       .map((match) => {
@@ -114,23 +118,25 @@ export class RegionMatcher {
       .sort((a, b) => b.score - a.score || b.end - b.start - (a.end - a.start));
   }
 
-  private matchAliases(input: string): Array<TrieMatch<RegionEntry>> {
+  private matchShadowedAliases(input: string, contextMatches: Array<TrieMatch<RegionEntry>>): Array<TrieMatch<RegionEntry>> {
     const matches: Array<TrieMatch<RegionEntry>> = [];
-    for (const alias of this.aliases) {
-      if (!alias.value) {
-        continue;
-      }
-      let start = input.indexOf(alias.value);
-      while (start >= 0) {
-        const end = start + alias.value.length;
+    for (const alias of this.shadowableAliases) {
+      for (const context of contextMatches) {
+        if (context.data.code === alias.entry.code || context.normalized.length <= alias.value.length) {
+          continue;
+        }
+        const offset = context.raw.indexOf(alias.value);
+        if (offset < 0) {
+          continue;
+        }
+        const start = context.start + offset;
         matches.push({
           data: alias.entry,
-          end,
+          end: start + alias.value.length,
           normalized: alias.value,
-          raw: input.slice(start, end),
+          raw: input.slice(start, start + alias.value.length),
           start,
         });
-        start = input.indexOf(alias.value, start + 1);
       }
     }
     return matches;

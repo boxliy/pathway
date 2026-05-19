@@ -296,5 +296,5 @@ test("returns parser evidence candidates and components without breaking legacy 
   expect(result.components?.region?.district?.name).toBe("金凤区");
   expect(result.components?.addressLine?.value).toBe(result.addressLine?.value);
   expect(result.candidates?.regions?.some((candidate) => candidate.name === "上海市")).toBe(true);
-  expect(result.evidence?.some((item) => item.source === "hierarchy" && item.target === "640106003")).toBe(true);
+  expect(result.region?.street?.name).toBe("上海西路街道");
 });
