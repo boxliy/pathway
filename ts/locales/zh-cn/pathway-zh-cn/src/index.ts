@@ -29,7 +29,7 @@ export type ZhAddressParseOptions = {
 };
 
 export function parseZhAddress(input: string, options: ZhAddressParseOptions = {}) {
-  return createZhAddressParser(options).parse(input);
+  return getZhAddressParser(options).parse(input);
 }
 
 export function createZhAddressParser(options: ZhAddressParseOptions = {}): Parser<string, ParseResult> {
@@ -37,6 +37,34 @@ export function createZhAddressParser(options: ZhAddressParseOptions = {}): Pars
 }
 
 export { createDefaultZhDataset };
+
+const parserCache = new Map<string, Parser<string, ParseResult>>();
+
+function getZhAddressParser(options: ZhAddressParseOptions) {
+  const cacheKey = parserCacheKey(options);
+  if (!cacheKey) {
+    return createZhAddressParser(options);
+  }
+
+  let parser = parserCache.get(cacheKey);
+  if (!parser) {
+    parser = createZhAddressParser(options);
+    parserCache.set(cacheKey, parser);
+  }
+  return parser;
+}
+
+function parserCacheKey(options: ZhAddressParseOptions) {
+  if (options.dataset || options.evidenceProvider || options.postalCodeRegions) {
+    return "";
+  }
+  return JSON.stringify({
+    idCardValidation: options.idCardValidation ?? "checksum",
+    nameMaxLength: options.nameMaxLength ?? 4,
+    strict: options.strict ?? false,
+    unrecognizedText: options.unrecognizedText ?? "address",
+  });
+}
 
 class ZhAddressParser implements Parser<string, ParseResult> {
   private readonly matcher: RegionMatcher;

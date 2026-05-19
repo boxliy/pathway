@@ -99,3 +99,15 @@ test("parses one thousand generated cases under a generous scale threshold", () 
 
   expect(Date.now() - startedAt).toBeLessThan(10000);
 });
+
+test("parseZhAddress reuses the default parser for repeated calls", () => {
+  const corpus = Array.from({ length: 100 }, (_, index) => syntheticCases[index % syntheticCases.length]);
+  const startedAt = Date.now();
+
+  for (const item of corpus) {
+    const result = parseZhAddress(item.input, { idCardValidation: "shape", unrecognizedText: "separate" });
+    expect(result.region?.district?.name).toBe(item.expected.district);
+  }
+
+  expect(Date.now() - startedAt).toBeLessThan(3000);
+});
