@@ -26,3 +26,10 @@ test("public build is self-contained and callable", async () => {
   assert.equal(result.region?.city?.name, "深圳市");
   assert.equal(result.region?.district?.name, "南山区");
 });
+
+test("workspace builds do not load the public package tsup config", () => {
+  execFileSync("pnpm", ["--dir", "ts/core/pathway-core", "run", "build"], {
+    cwd: repositoryRoot,
+    stdio: "pipe",
+  });
+});

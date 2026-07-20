@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "build": "pnpm --dir ts run build && pnpm run build:package",
-    "build:package": "tsup",
+    "build:package": "tsup --config tsup.package.config.ts",
     "prepare": "pnpm run build:package",
     "test": "pnpm --dir ts run test && node --test --test-concurrency=1 tests/*.test.mjs"
   },
