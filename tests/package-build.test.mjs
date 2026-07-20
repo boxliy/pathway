@@ -11,9 +11,13 @@ test("public build is self-contained and callable", async () => {
     stdio: "pipe",
   });
 
-  const esm = await readFile(new URL("../dist/index.mjs", import.meta.url), "utf8");
+  const [esm, types] = await Promise.all([
+    readFile(new URL("../dist/index.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../dist/index.d.ts", import.meta.url), "utf8"),
+  ]);
   assert.doesNotMatch(esm, /@pathway\/(?:core|zh-cn-data)/);
   assert.doesNotMatch(esm, /from ["']china-division/);
+  assert.doesNotMatch(types, /@pathway\/(?:core|zh-cn-data)/);
 
   const { parseZhAddress } = await import("../dist/index.mjs");
   const result = parseZhAddress("广东省深圳市南山区科技园");

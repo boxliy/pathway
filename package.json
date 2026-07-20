@@ -19,9 +19,9 @@
   ],
   "scripts": {
     "build": "pnpm --dir ts run build && pnpm run build:package",
-    "build:package": "tsup ts/locales/zh-cn/pathway-zh-cn/src/index.ts --format esm,cjs --dts --tsconfig tsconfig.package.json",
+    "build:package": "tsup",
     "prepare": "pnpm run build:package",
-    "test": "pnpm --dir ts run test && node --test tests/*.test.mjs"
+    "test": "pnpm --dir ts run test && node --test --test-concurrency=1 tests/*.test.mjs"
   },
   "devDependencies": {
     "tsup": "^8.5.0",
