@@ -1,6 +1,7 @@
 {
   "name": "@pathway/core",
   "version": "0.1.0",
+  "private": true,
   "description": "Pathway parser core types and utilities",
   "license": "MIT",
   "main": "src/index.ts",

@@ -1,6 +1,7 @@
 {
   "name": "@pathway/zh-cn-data",
   "version": "0.1.0",
+  "private": true,
   "description": "Pathway Chinese region data indexes",
   "license": "MIT",
   "main": "src/index.ts",

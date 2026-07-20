@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": []
+  },
+  "include": [
+    "ts/core/pathway-core/src/**/*.ts",
+    "ts/locales/zh-cn/pathway-zh-cn-data/src/**/*.ts",
+    "ts/locales/zh-cn/pathway-zh-cn/src/**/*.ts"
+  ]
+}

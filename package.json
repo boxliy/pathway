@@ -1,10 +1,31 @@
 {
-  "name": "@pathway/repo",
-  "private": true,
+  "name": "@pathway/zh-cn",
+  "version": "0.1.0",
+  "description": "Pathway Chinese address parser",
   "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "pnpm --dir ts run build",
-    "test": "pnpm --dir ts run test"
+    "build": "pnpm --dir ts run build && pnpm run build:package",
+    "build:package": "tsup ts/locales/zh-cn/pathway-zh-cn/src/index.ts --format esm,cjs --dts --tsconfig tsconfig.package.json",
+    "prepare": "pnpm run build:package",
+    "test": "pnpm --dir ts run test && node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
   },
   "packageManager": "pnpm@10.15.1"
 }

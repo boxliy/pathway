@@ -1,6 +1,7 @@
 {
-  "name": "@pathway/zh-cn",
+  "name": "@pathway/zh-cn-impl",
   "version": "0.1.0",
+  "private": true,
   "description": "Pathway Chinese address parser",
   "license": "MIT",
   "main": "src/index.ts",
