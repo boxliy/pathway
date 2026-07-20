@@ -1,0 +1,10 @@
+{
+  "name": "@pathway/repo",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "build": "pnpm --dir ts run build",
+    "test": "pnpm --dir ts run test"
+  },
+  "packageManager": "pnpm@10.15.1"
+}

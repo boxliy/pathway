@@ -1,0 +1,14 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@pathway/core": [
+        "../../../core/pathway-core/src"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}

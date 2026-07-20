@@ -1,0 +1,3 @@
+packages:
+  - "ts/core/*"
+  - "ts/locales/*/*"

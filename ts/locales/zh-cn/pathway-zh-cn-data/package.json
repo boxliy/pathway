@@ -1,0 +1,37 @@
+{
+  "name": "@pathway/zh-cn-data",
+  "version": "0.1.0",
+  "description": "Pathway Chinese region data indexes",
+  "license": "MIT",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "jest"
+  },
+  "dependencies": {
+    "china-division": "2.7.0"
+  },
+  "devDependencies": {
+    "@types/jest": "*",
+    "jest": "*",
+    "ts-jest": "*",
+    "tsup": "*",
+    "typescript": "*"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.ts"
+    ]
+  }
+}
