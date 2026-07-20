@@ -33,6 +33,7 @@ test("a fresh Vite project installs the current Git commit and builds", async ()
   const remoteParent = await mkdtemp(join(tmpdir(), "pathway-git-remote-"));
   const remote = join(remoteParent, "pathway.git");
   const consumer = await mkdtemp(join(tmpdir(), "pathway-vite-consumer-"));
+  const store = await mkdtemp(join(tmpdir(), "pathway-pnpm-store-"));
   run("git", ["clone", "--bare", repositoryRoot, remote], repositoryRoot);
   await mkdir(join(consumer, "src"));
 
@@ -84,7 +85,14 @@ document.querySelector<HTMLDivElement>("#app")!.textContent = result.region?.dis
 `,
   );
 
-  run("pnpm", ["install", "--no-frozen-lockfile"], consumer);
+  run("pnpm", ["install", "--no-frozen-lockfile", "--store-dir", store], consumer);
+
+  const declarations = await readFile(
+    join(consumer, "node_modules/@pathway/zh-cn/dist/index.d.ts"),
+    "utf8",
+  );
+  assert.doesNotMatch(declarations, /from ["'](?:@pathway\/|\.\/)/);
+
   run("pnpm", ["run", "build"], consumer);
 
   const html = await readFile(join(consumer, "dist/index.html"), "utf8");
