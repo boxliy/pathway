@@ -81,7 +81,6 @@ export function buildTokens(
 
 function cleanupAddress(input: string) {
   return input
-    .replace(/[,:;|/()[\]{}<>]/g, " ")
     .replace(/\s+/g, "")
     .replace(/^\.+|\.+$/g, "")
     .replace(/^[，,;；:：/|｜\\\-.]+/, "")
@@ -111,15 +110,15 @@ function splitDisplayAddress(address: string, mode: "address" | "separate") {
   const match = /(备注|货号|数量|姓名|电话|手机|证件|身份证|收件人|联系人)\s*[:：=|｜-]?\s*/.exec(value);
   if (match && match.index > 0) {
     return {
-      address: cleanupDisplayAddress(value.slice(0, match.index)),
-      unrecognizedText: cleanupDisplayAddress(value.slice(match.index)),
+      address: cleanupDisplayAddressBoundary(value.slice(0, match.index)),
+      unrecognizedText: `${match[1]}${cleanupDisplayAddress(value.slice(match.index + match[0].length))}`,
     };
   }
 
   const remarkIndex = value.indexOf("易碎");
   if (remarkIndex > 0) {
     return {
-      address: cleanupDisplayAddress(value.slice(0, remarkIndex)),
+      address: cleanupDisplayAddressBoundary(value.slice(0, remarkIndex)),
       unrecognizedText: `备注${cleanupDisplayAddress(value.slice(remarkIndex))}`,
     };
   }
@@ -127,13 +126,14 @@ function splitDisplayAddress(address: string, mode: "address" | "separate") {
   return { address: value };
 }
 
+function cleanupDisplayAddressBoundary(input: string) {
+  return cleanupDisplayAddress(input).replace(/[,，;；:：/|｜\\\-.]+$/, "");
+}
+
 function cleanupDisplayAddress(input: string) {
   return input
     .replace(/(真实姓名|收件人|联系人|联系电话|电话|手机|证件号|证件|身份证|所在地区|详细地址|地址|收件)\s*[:：=|｜-]?\s*/g, "")
-    .replace(/[【】()[\]（）{}<>]/g, "")
-    .replace(/[\s,，;；:：/|｜\\-]+/g, "")
-    .replace(/^[\s,，;；:：/|｜\\\-.]+/, "")
-    .replace(/[\s,，;；:：/|｜\\\-.]+$/, "");
+    .replace(/\s+/g, "");
 }
 
 function spanToToken(span: ParseSpan, kind: ParseToken["kind"]): ParseToken {

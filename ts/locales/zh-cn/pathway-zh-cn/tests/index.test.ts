@@ -163,6 +163,24 @@ test("keeps invalid checksum identity text out of display address in checksum mo
   expect(result.warnings).toContain("id_card_invalid_checksum");
 });
 
+test("preserves punctuation in the address and display address lines", () => {
+  const result = parseZhAddress("湖北省武汉市江岸区上海路109号(A座)/12-3-405");
+
+  expect(result.addressLine?.value).toBe("上海路109号(A座)/12-3-405");
+  expect(result.displayAddressLine?.value).toBe("上海路109号(A座)/12-3-405");
+});
+
+test("preserves address punctuation with a tagged contact and hyphenated phone", () => {
+  const result = parseZhAddress(
+    "联系人:张三 手机:151-8023-1234 地址:湖北省武汉市江岸区上海路109号(A座)/12-3-405",
+  );
+
+  expect(result.recipientName?.value).toBe("张三");
+  expect(result.phone?.value).toBe("15180231234");
+  expect(result.addressLine?.value).toBe("上海路109号(A座)/12-3-405");
+  expect(result.displayAddressLine?.value).toBe("上海路109号(A座)/12-3-405");
+});
+
 test("extracts checksum-invalid identity card from comma separated address text in shape mode", () => {
   const result = parseZhAddress(
     "山东省青岛市李沧区临汾路 28 号，李四，15200000002，370213199208254025",
@@ -189,6 +207,22 @@ test("returns display address with street and separates remark text", () => {
   expect(result.addressLine?.value).toBe("金磐路备注易碎");
   expect(result.displayAddressLine?.value).toBe("西关街道金磐路");
   expect(result.unrecognizedText?.value).toBe("备注易碎");
+});
+
+test("removes separators at the boundary between display address and remark", () => {
+  const labeledRemark = parseZhAddress(
+    "浙江省金华市婺城区西关街道金磐路，备注：易碎",
+    { unrecognizedText: "separate" },
+  );
+  const unlabeledRemark = parseZhAddress(
+    "浙江省金华市婺城区西关街道金磐路，易碎",
+    { unrecognizedText: "separate" },
+  );
+
+  expect(labeledRemark.displayAddressLine?.value).toBe("西关街道金磐路");
+  expect(labeledRemark.unrecognizedText?.value).toBe("备注易碎");
+  expect(unlabeledRemark.displayAddressLine?.value).toBe("西关街道金磐路");
+  expect(unlabeledRemark.unrecognizedText?.value).toBe("备注易碎");
 });
 
 test("supports caller supplied datasets", () => {
