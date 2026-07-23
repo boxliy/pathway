@@ -229,7 +229,8 @@ export function resolveRegion(
 ): RegionSelection {
   const states = new Map<string, CandidateState>();
   const textMatches = matcher.match(input);
-  const hasRepeatedTextName = hasRepeatedTextRegion(textMatches);
+  const ambiguousTextCodes = repeatedTextRegionCodes(textMatches);
+  const hasRepeatedTextName = ambiguousTextCodes.size > 0;
 
   for (const match of textMatches) {
     addEvidence(states, match.data, match.evidence[0], match.score, spanFromMatch(match));
@@ -247,7 +248,7 @@ export function resolveRegion(
   addHierarchyEvidence(states);
   recomputeScores(states);
 
-  const chains = buildChains(states);
+  const chains = buildChains(states, ambiguousTextCodes);
   const warnings: string[] = hasRepeatedTextName ? ["ambiguous_region"] : [];
   const candidates = toParseCandidates(states);
   const evidence = uniqueEvidence(candidates.flatMap((candidate) => candidate.evidence));
@@ -338,7 +339,7 @@ function isSameOrRelatedDistrict(matcher: RegionMatcher, code: string, selectedD
   return false;
 }
 
-function hasRepeatedTextRegion(matches: RegionCandidate[]) {
+function repeatedTextRegionCodes(matches: RegionCandidate[]) {
   const groups = new Map<string, Set<string>>();
   for (const match of matches) {
     const key = `${match.start}:${match.end}:${match.raw}:${match.data.level}`;
@@ -349,7 +350,13 @@ function hasRepeatedTextRegion(matches: RegionCandidate[]) {
     }
     codes.add(match.data.code);
   }
-  return [...groups.values()].some((codes) => codes.size > 1);
+  const repeatedCodes = new Set<string>();
+  for (const codes of groups.values()) {
+    if (codes.size > 1) {
+      for (const code of codes) repeatedCodes.add(code);
+    }
+  }
+  return repeatedCodes;
 }
 
 function pushWarning(warnings: string[], warning: string) {
@@ -476,7 +483,7 @@ function recomputeScores(states: Map<string, CandidateState>) {
   }
 }
 
-function buildChains(states: Map<string, CandidateState>) {
+function buildChains(states: Map<string, CandidateState>, ambiguousTextCodes: Set<string>) {
   const chains: RegionChain[] = [];
   for (const state of states.values()) {
     const entries = chainEntries(state.entry);
@@ -485,7 +492,7 @@ function buildChains(states: Map<string, CandidateState>) {
       .filter((item): item is CandidateState => Boolean(item));
     chains.push({
       entries,
-      score: scoreChain(chainStates),
+      score: scoreChain(chainStates, ambiguousTextCodes),
       states: chainStates,
     });
   }
@@ -502,7 +509,7 @@ function chainEntries(entry: RegionEntry) {
   return entries;
 }
 
-function scoreChain(states: CandidateState[]) {
+function scoreChain(states: CandidateState[], ambiguousTextCodes: Set<string>) {
   const deepest = states.reduce((best, state) => Math.max(best, levelRank(state.entry.level)), 0);
   const textCount = states.filter((state) => state.evidence.some((item) => item.source === "text")).length;
   const strongEvidence = states.some((state) => state.evidence.some((item) => item.source === "id_card" || item.source === "postal_code"));
@@ -510,7 +517,18 @@ function scoreChain(states: CandidateState[]) {
     + deepest * 0.03
     + textCount * 0.08
     + (strongEvidence ? 0.55 : 0)
+    - ambiguousLeafHierarchyPenalty(states, ambiguousTextCodes)
     - overlappingTextPenalty(states);
+}
+
+function ambiguousLeafHierarchyPenalty(states: CandidateState[], ambiguousTextCodes: Set<string>) {
+  const directTextStates = states.filter((state) => state.evidence.some((item) => item.source === "text"));
+  const hasStrongEvidence = states.some((state) =>
+    state.evidence.some((item) => item.source === "id_card" || item.source === "postal_code"));
+  if (hasStrongEvidence || directTextStates.length !== 1 || !ambiguousTextCodes.has(directTextStates[0].entry.code)) {
+    return 0;
+  }
+  return 0.35;
 }
 
 function overlappingTextPenalty(states: CandidateState[]) {
