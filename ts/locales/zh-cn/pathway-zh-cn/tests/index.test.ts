@@ -18,6 +18,34 @@ test("parses a complete simplified Chinese address", () => {
   expect(result.addressLine?.value).toBe("青禾路澄园3号楼");
 });
 
+test.each([
+  {
+    addressLine: "高新区华奥路567号德润天玺西区1-1-403",
+    city: "济南市",
+    input: "山东省济南市高新区华奥路567号德润天玺西区1-1-403",
+    province: "山东省",
+  },
+  {
+    addressLine: "经济开发区商英街56号悉尼阳光小区7号楼1单元1号",
+    city: "郑州市",
+    input: "河南省 郑州市 经济开发区 商英街56号悉尼阳光小区7号楼1单元1号",
+    province: "河南省",
+  },
+  {
+    addressLine: "经济开发区商英衔56号悉尼阳光小区7号楼1单元1号",
+    city: "郑州市",
+    input: "河南省 郑州市 经济开发区 商英衔56号悉尼阳光小区7号楼1单元1号",
+    province: "河南省",
+  },
+])("keeps explicit province and city ahead of unrelated repeated street aliases: $input", ({addressLine, city, input, province}) => {
+  const result = parseZhAddress(input);
+
+  expect(result.region?.province?.name).toBe(province);
+  expect(result.region?.city?.name).toBe(city);
+  expect(result.addressLine?.value).toBe(addressLine);
+  expect(result.displayAddressLine?.value).toBe(addressLine);
+});
+
 test("parses missing province and infers hierarchy from district", () => {
   const result = parseZhAddress("雁塔区明理路710061 秦星澜 13593464918");
 
